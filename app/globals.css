@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0a0f1a;
+  --foreground: #e6eef8;
+  --panel: #131b2b;
+  --border: #1e2a3a;
+  --mint: #00c9a7;
+  --lagoon: #00b4d8;
+  --danger: #ff6b6b;
+  --muted: #8ea3b8;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(0, 201, 167, 0.12), transparent 28%),
+    radial-gradient(circle at left center, rgba(0, 180, 216, 0.1), transparent 22%),
+    linear-gradient(180deg, #09101b 0%, #0a0f1a 100%);
+  color: var(--foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.35;
+  animation: background-pan 28s linear infinite;
+  mask-image: radial-gradient(circle at center, black 35%, transparent 100%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0, 201, 167, 0.08), transparent 22%),
+    radial-gradient(circle at 80% 8%, rgba(0, 180, 216, 0.08), transparent 18%);
+  filter: blur(40px);
+}
+
+::selection {
+  background: rgba(0, 201, 167, 0.2);
+  color: #effdf9;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: 0.06em;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-[28px] border border-forex-border bg-panel-gradient shadow-panel;
+  }
+
+  .panel-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-highlight;
+  }
+
+  .glass-sidebar {
+    @apply bg-[#0A0F1A]/70 backdrop-blur-xl;
+  }
+
+  .gradient-text {
+    @apply bg-accent-gradient bg-clip-text text-transparent;
+  }
+
+  .gradient-border {
+    background:
+      linear-gradient(#0d1523, #0d1523) padding-box,
+      linear-gradient(135deg, rgba(0, 201, 167, 0.8), rgba(0, 180, 216, 0.9)) border-box;
+    border: 1px solid transparent;
+  }
+
+  .toast-surface {
+    background:
+      linear-gradient(180deg, rgba(19, 27, 43, 0.98), rgba(13, 20, 33, 0.98)),
+      linear-gradient(135deg, rgba(0, 201, 167, 0.16), rgba(0, 180, 216, 0.16));
+    box-shadow: 0 18px 40px rgba(6, 12, 24, 0.35);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+.receipt-paper {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 249, 252, 0.98) 100%),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.03), rgba(15, 23, 42, 0));
+  box-shadow: 0 22px 60px rgba(5, 10, 18, 0.38);
+}

@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String          @id @default(cuid())
+  name         String
+  email        String          @unique
+  passwordHash String
+  role         Role            @default(AGENT)
+  isActive     Boolean         @default(true)
+  transactions Transaction[]   @relation("CreatedTransactions")
+  rateChanges  RateHistory[]   @relation("RateChanges")
+  stockMoves   StockMovement[] @relation("StockMoves")
+  cashMoves    CashMovement[]  @relation("CashMoves")
+  activityLogs ActivityLog[]
+  createdAt    DateTime        @default(now())
+}
+
+enum Role {
+  ADMIN
+  AGENT
+}
+
+enum LogCategory {
+  TRANSACTION
+  STOCK
+  CASH
+  RATE
+  USER
+  SYSTEM
+}
+
+model ActivityLog {
+  id        String      @id @default(cuid())
+  category  LogCategory
+  action    String
+  details   String?
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  createdAt DateTime    @default(now())
+}
+
+model Currency {
+  code         String          @id
+  name         String
+  flagCode     String
+  buyRate      Decimal         @db.Decimal(18, 4)
+  sellRate     Decimal         @db.Decimal(18, 4)
+  updatedAt    DateTime        @updatedAt
+  history      RateHistory[]
+  transactions Transaction[]
+  stockMoves   StockMovement[]
+  clientRates  ClientRate[]
+  debts        SupplierDebt[]
+}
+
+model RateHistory {
+  id           String    @id @default(cuid())
+  currencyCode String
+  currency     Currency  @relation(fields: [currencyCode], references: [code])
+  oldBuyRate   Decimal   @db.Decimal(18, 4)
+  newBuyRate   Decimal   @db.Decimal(18, 4)
+  oldSellRate  Decimal   @db.Decimal(18, 4)
+  newSellRate  Decimal   @db.Decimal(18, 4)
+  changedBy    User      @relation("RateChanges", fields: [changedById], references: [id])
+  changedById  String
+  changedAt    DateTime  @default(now())
+}
+
+model Client {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  contact      String?
+  fixedRates   ClientRate[]
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
+}
+
+model ClientRate {
+  id           String   @id @default(cuid())
+  clientId     String
+  client       Client   @relation(fields: [clientId], references: [id])
+  currencyCode String
+  currency     Currency @relation(fields: [currencyCode], references: [code])
+  buyRate      Decimal? @db.Decimal(18, 4)
+  sellRate     Decimal? @db.Decimal(18, 4)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([clientId, currencyCode])
+}
+
+model Transaction {
+  id             String         @id @default(cuid())
+  receiptNumber  String?
+  type           Type
+  currencyCode   String
+  currency       Currency       @relation(fields: [currencyCode], references: [code])
+  amountGiven    Decimal        @db.Decimal(18, 2)
+  amountReceived Decimal        @db.Decimal(18, 2)
+  rateUsed       Decimal        @db.Decimal(18, 4)
+  clientName     String?
+  clientId       String?
+  client         Client?        @relation(fields: [clientId], references: [id])
+  createdBy      User           @relation("CreatedTransactions", fields: [createdById], references: [id])
+  createdById    String
+  createdAt      DateTime       @default(now())
+  stockMove      StockMovement?
+}
+
+enum Type {
+  BUY
+  SELL
+}
+
+model Supplier {
+  id        String          @id @default(cuid())
+  name      String          @unique
+  contact   String?
+  createdAt DateTime        @default(now())
+  moves     StockMovement[]
+  debts     SupplierDebt[]
+}
+
+model StockMovement {
+  id            String         @id @default(cuid())
+  currencyCode  String
+  currency      Currency       @relation(fields: [currencyCode], references: [code])
+  direction     StockDirection
+  amount        Decimal        @db.Decimal(18, 2)
+  reason        StockReason
+  note          String?
+  supplierId    String?
+  supplier      Supplier?      @relation(fields: [supplierId], references: [id])
+  transactionId String?        @unique
+  transaction   Transaction?   @relation(fields: [transactionId], references: [id])
+  createdById   String
+  createdBy     User           @relation("StockMoves", fields: [createdById], references: [id])
+  createdAt     DateTime       @default(now())
+}
+
+enum StockDirection {
+  IN
+  OUT
+}
+
+enum StockReason {
+  TRANSACTION
+  SUPPLIER_PURCHASE
+  ADJUSTMENT
+  DEBT_SETTLEMENT
+}
+
+model SupplierDebt {
+  id           String   @id @default(cuid())
+  supplierId   String
+  supplier     Supplier @relation(fields: [supplierId], references: [id])
+  currencyCode String
+  currency     Currency @relation(fields: [currencyCode], references: [code])
+  amount       Decimal  @db.Decimal(18, 2)
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([supplierId, currencyCode])
+}
+
+// ─── Caisse XAF ───────────────────────────────────────────────────────────────
+
+enum CashDirection {
+  IN
+  OUT
+}
+
+enum CashReason {
+  DEPOT
+  RETRAIT
+  DEPENSE
+  AJUSTEMENT
+  AUTRE
+}
+
+model CashMovement {
+  id          String        @id @default(cuid())
+  direction   CashDirection
+  amount      Decimal       @db.Decimal(18, 2)
+  reason      CashReason
+  note        String?
+  createdById String
+  createdBy   User          @relation("CashMoves", fields: [createdById], references: [id])
+  createdAt   DateTime      @default(now())
+}
+
+// ─── Numérotation séquentielle des reçus ──────────────────────────────────────
+
+model ReceiptSequence {
+  id      Int @id @default(autoincrement())
+  year    Int
+  month   Int
+  lastSeq Int @default(0)
+
+  @@unique([year, month])
+}
