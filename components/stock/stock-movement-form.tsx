@@ -123,7 +123,7 @@ export function StockMovementForm({ onCreated }: { onCreated: () => void }) {
         <CardTitle>Nouvel Approvisionnement / Ajustement</CardTitle>
         <Button 
           type="button" 
-          variant={useCalculator ? "secondary" : "outline"} 
+          variant={useCalculator ? "secondary" : "ghost"} 
           size="sm"
           onClick={() => setUseCalculator(!useCalculator)}
           className="gap-2"
