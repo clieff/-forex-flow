@@ -56,19 +56,19 @@ export default async function LogsPage({
   };
 
   return (
-    <PageTransition className="space-y-6">
-      <section className="panel p-6">
-        <div className="flex items-center justify-between">
+    <PageTransition className="space-y-4 md:space-y-6">
+      <section className="panel p-4 md:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm uppercase tracking-premium text-forex-muted">Audit Surface</p>
-            <h2 className="mt-2 text-3xl font-semibold text-white">Journal d'activité universel</h2>
+            <h2 className="mt-2 text-2xl md:text-3xl font-semibold text-white">Journal d'activité universel</h2>
             <p className="mt-2 text-sm text-forex-muted">
               Historique complet de tous les mouvements et actions effectués sur la plateforme.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <SyncLogsButton />
-            <Badge className="border-white/10 bg-white/[0.05] px-4 py-2">
+            <Badge className="border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs md:text-sm md:px-4 md:py-2">
               {total} entrées enregistrées
             </Badge>
           </div>

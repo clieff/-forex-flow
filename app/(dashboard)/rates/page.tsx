@@ -14,9 +14,9 @@ export default async function RatesPage() {
   const editable = session?.user.role === "ADMIN";
 
   return (
-    <PageTransition className="space-y-6">
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
-        <section className="panel p-6">
+    <PageTransition className="space-y-4 md:space-y-6">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-[1fr_0.9fr]">
+        <section className="panel p-4 md:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-premium text-forex-muted">Rate Studio</p>
@@ -38,7 +38,7 @@ export default async function RatesPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {data.histories.map((history) => (
-              <div key={history.id} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4">
+              <div key={history.id} className="rounded-[18px] md:rounded-[22px] border border-white/10 bg-white/[0.03] p-3 md:p-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-semibold text-white">{history.currencyCode}</span>
                   <span className="text-forex-muted">{history.changedBy.name}</span>

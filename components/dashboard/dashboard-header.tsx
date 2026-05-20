@@ -15,7 +15,11 @@ const labels: Record<string, string> = {
   transactions: "Transactions",
   new: "New Deal",
   logs: "Audit Logs",
-  settings: "Settings"
+  settings: "Settings",
+  caisse: "Caisse",
+  stock: "Stock",
+  suppliers: "Fournisseurs",
+  clients: "Clients"
 };
 
 export function DashboardHeader({
@@ -44,12 +48,14 @@ export function DashboardHeader({
 
   const parts = pathname.split("/").filter(Boolean);
   const breadcrumbParts = parts.length ? parts : [""];
+  const pageTitle = parts.at(-1) ? labels[parts.at(-1) as string] ?? "Workspace" : "Command Center";
 
   return (
-    <header className="flex flex-col gap-5 rounded-[30px] border border-white/10 bg-white/[0.03] px-6 py-5 md:flex-row md:items-center md:justify-between">
-      <div className="space-y-3">
+    <header className="relative flex flex-col gap-3 rounded-[20px] md:rounded-[30px] border border-white/10 bg-white/[0.03] px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6 md:py-5">
+      <div className="space-y-1 md:space-y-3 min-w-0">
+        {/* Breadcrumb - caché sur mobile */}
         <motion.div
-          className="flex flex-wrap items-center gap-2 text-sm text-forex-muted"
+          className="hidden md:flex flex-wrap items-center gap-2 text-sm text-forex-muted"
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
         >
@@ -69,17 +75,17 @@ export function DashboardHeader({
           ))}
         </motion.div>
         <div>
-          <h2 className="text-2xl font-semibold text-white">
-            {parts.at(-1) ? labels[parts.at(-1) as string] ?? "Workspace" : "Command Center"}
+          <h2 className="text-lg md:text-2xl font-semibold text-white truncate">
+            {pageTitle}
           </h2>
-          <p className="mt-1 text-sm text-forex-muted">
+          <p className="hidden md:block mt-1 text-sm text-forex-muted">
             Pilotage en temps reel des flux FX, spreads et operations de caisse.
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Search */}
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* Desktop Search */}
         <button 
           onClick={() => setSearchOpen(true)}
           className="hidden md:flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-forex-muted transition hover:bg-white/[0.05] hover:text-white"
@@ -91,17 +97,25 @@ export function DashboardHeader({
           </kbd>
         </button>
 
+        {/* Mobile Search */}
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="flex md:hidden items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-forex-muted transition active:bg-white/[0.08]"
+        >
+          <Search className="h-[18px] w-[18px]" />
+        </button>
+
         <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
 
         {/* Notifications */}
-        <div className="relative" ref={notifRef}>
+        <div className="static md:relative" ref={notifRef}>
           <button 
             onClick={() => setShowNotification(!showNotification)}
-            className="relative rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-forex-muted transition hover:text-white"
+            className="relative rounded-xl md:rounded-2xl border border-white/10 bg-white/[0.04] p-2.5 md:p-3 text-forex-muted transition active:bg-white/[0.08] hover:text-white"
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-[18px] w-[18px] md:h-5 md:w-5" />
             {alerts.length > 0 && (
-              <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-forex-danger animate-pulse" />
+              <span className="absolute right-1.5 top-1.5 md:right-2 md:top-2 h-2 w-2 md:h-2.5 md:w-2.5 rounded-full bg-forex-danger animate-pulse" />
             )}
           </button>
 
@@ -111,7 +125,7 @@ export function DashboardHeader({
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="absolute right-0 mt-3 w-80 rounded-2xl border border-white/10 bg-[#0A0F1A] shadow-2xl z-50 overflow-hidden"
+                className="absolute left-4 right-4 md:left-auto md:right-0 mt-3 w-auto md:w-80 md:max-w-none rounded-2xl border border-white/10 bg-[#0A0F1A] shadow-2xl z-50 overflow-hidden"
               >
                 <div className="p-4 border-b border-white/10 bg-white/[0.02]">
                   <h3 className="font-semibold text-white flex items-center justify-between">
@@ -142,15 +156,17 @@ export function DashboardHeader({
             )}
           </AnimatePresence>
         </div>
-        <div className="flex items-center gap-3 rounded-[24px] border border-white/10 bg-white/[0.03] px-3 py-2">
-          <div className="gradient-border flex h-11 w-11 items-center justify-center rounded-2xl text-sm font-semibold text-white">
+
+        {/* User avatar - compact on mobile */}
+        <div className="flex items-center gap-2 md:gap-3 rounded-[16px] md:rounded-[24px] border border-white/10 bg-white/[0.03] px-2 py-1.5 md:px-3 md:py-2">
+          <div className="gradient-border flex h-8 w-8 md:h-11 md:w-11 items-center justify-center rounded-xl md:rounded-2xl text-xs md:text-sm font-semibold text-white">
             {userName
               .split(" ")
               .slice(0, 2)
               .map((segment) => segment[0])
               .join("")}
           </div>
-          <div>
+          <div className="hidden sm:block">
             <p className="text-sm font-semibold text-white">{userName}</p>
             <Badge className="mt-1 border-forex-mint/20 bg-forex-mint/10 text-forex-mint">
               {role === "ADMIN" ? "Admin" : "Agent"}

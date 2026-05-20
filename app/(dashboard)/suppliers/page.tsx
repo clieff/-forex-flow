@@ -11,14 +11,14 @@ export default async function SuppliersPage() {
   const history = await getSupplierHistory();
 
   return (
-    <PageTransition className="space-y-6">
-      <section className="panel p-6">
+    <PageTransition className="space-y-4 md:space-y-6">
+      <section className="panel p-4 md:p-6">
         <p className="text-sm uppercase tracking-premium text-forex-muted">Liquidity Network</p>
         <h2 className="mt-2 text-3xl font-semibold text-white">Fournisseurs</h2>
         <p className="mt-2 text-sm text-forex-muted">Gestion des fournisseurs pour approvisionner le stock devises.</p>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_1.5fr]">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-[1fr_1.5fr]">
         <Card>
           <CardHeader>
             <CardTitle>Annuaire fournisseurs</CardTitle>

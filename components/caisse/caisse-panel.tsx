@@ -63,7 +63,7 @@ export function CaissePanel() {
   }
 
   return (
-    <div className="panel p-6">
+    <div className="panel p-4 md:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <p className="text-sm uppercase tracking-premium text-forex-muted">Gestion manuelle</p>
@@ -78,7 +78,7 @@ export function CaissePanel() {
       {open && (
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 border-t border-white/10 pt-6">
           {/* Type de mouvement */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => form.setValue("direction", "IN")}
@@ -111,7 +111,7 @@ export function CaissePanel() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Montant (XAF)</Label>
               <Controller

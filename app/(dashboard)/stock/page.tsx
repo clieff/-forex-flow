@@ -14,8 +14,8 @@ export default async function StockPage() {
   const balances = await getStockBalances();
 
   return (
-    <PageTransition className="space-y-6">
-      <section className="panel p-6">
+    <PageTransition className="space-y-4 md:space-y-6">
+      <section className="panel p-4 md:p-6">
         <p className="text-sm uppercase tracking-premium text-forex-muted">Inventory Control</p>
         <h2 className="mt-2 text-3xl font-semibold text-white">Stock devises</h2>
         <p className="mt-2 text-sm text-forex-muted">

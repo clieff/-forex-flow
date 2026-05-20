@@ -21,10 +21,10 @@ export default async function DashboardPage() {
   const txChange = prevPoint?.count ? (((lastPoint?.count ?? 0) - prevPoint.count) / prevPoint.count) * 100 : 3.1;
 
   return (
-    <PageTransition className="space-y-6">
+    <PageTransition className="space-y-4 md:space-y-6">
       <RateTicker items={data.rateTickers} />
 
-      <section className="grid gap-6 xl:grid-cols-4">
+      <section className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
         <MetricCard
           label="Volume total"
           value={formatMoney(data.summary.totalVolume)}
@@ -46,7 +46,7 @@ export default async function DashboardPage() {
         <Card className="min-h-[220px]">
           <CardHeader>
             <CardTitle>Devise dominante</CardTitle>
-            <p className="text-4xl font-semibold text-white">{data.summary.topCurrency}</p>
+            <p className="text-2xl md:text-4xl font-semibold text-white">{data.summary.topCurrency}</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
@@ -69,7 +69,7 @@ export default async function DashboardPage() {
         </Card>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <section className="grid gap-4 md:gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <VolumeChart data={data.weeklyBuckets} />
 
         <Card>
@@ -105,8 +105,8 @@ export default async function DashboardPage() {
         </Card>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1fr_0.92fr]">
-        <Card>
+      <section className="grid gap-4 md:gap-6 lg:grid-cols-[1fr_0.92fr] min-w-0 w-full overflow-hidden">
+        <Card className="overflow-hidden w-full">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -160,15 +160,15 @@ export default async function DashboardPage() {
           <CardContent className="space-y-4">
             {data.recentRateChanges.map((change) => (
               <div key={change.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <p className="text-sm uppercase tracking-premium text-forex-muted">{change.currency.code}</p>
-                    <p className="mt-1 text-lg font-semibold text-white">
+                    <p className="mt-1 text-base sm:text-lg font-semibold text-white">
                       {change.newBuyRate.toFixed(2)} / {change.newSellRate.toFixed(2)}
                     </p>
                   </div>
-                  <div className="rounded-full bg-forex-mint/10 px-3 py-1 text-sm text-forex-mint">
-                    <ArrowUpRight className="mr-1 inline h-4 w-4" />
+                  <div className="self-start sm:self-auto rounded-full bg-forex-mint/10 px-2.5 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm text-forex-mint">
+                    <ArrowUpRight className="mr-1 inline h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Updated
                   </div>
                 </div>
@@ -193,7 +193,7 @@ export default async function DashboardPage() {
             <p className="text-sm text-forex-muted">Performance de l'équipe basée sur le volume de transactions.</p>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 md:gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {data.agentRankings.map((agent, index) => (
                 <div key={agent.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.02] p-4">
                   <div className="flex items-center gap-4">

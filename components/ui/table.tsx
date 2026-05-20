@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 
 export const Table = React.forwardRef<HTMLTableElement, React.TableHTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className="overflow-hidden rounded-[24px] border border-forex-border">
-      <table ref={ref} className={cn("w-full border-collapse text-left text-sm", className)} {...props} />
+    <div className="w-full overflow-x-auto -mx-px rounded-[16px] md:rounded-[24px] border border-forex-border overscroll-x-contain">
+      <table ref={ref} className={cn("w-full min-w-[600px] border-collapse text-left text-sm", className)} {...props} />
     </div>
   )
 );
@@ -29,9 +29,9 @@ export const TableRow = ({ className, ...props }: React.HTMLAttributes<HTMLTable
 );
 
 export const TableHead = ({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) => (
-  <th className={cn("px-4 py-3 text-xs font-semibold uppercase tracking-premium", className)} {...props} />
+  <th className={cn("px-3 py-2.5 md:px-4 md:py-3 text-[10px] md:text-xs font-semibold uppercase tracking-premium whitespace-nowrap", className)} {...props} />
 );
 
 export const TableCell = ({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) => (
-  <td className={cn("px-4 py-4 text-forex-text", className)} {...props} />
+  <td className={cn("px-3 py-3 md:px-4 md:py-4 text-forex-text text-xs md:text-sm", className)} {...props} />
 );

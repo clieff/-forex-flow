@@ -40,7 +40,7 @@ export function LogFilters({ currentFilters }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {/* Recherche */}
         <div className="space-y-1">
           <Label>Recherche</Label>
@@ -61,7 +61,7 @@ export function LogFilters({ currentFilters }: Props) {
           <select
             value={currentFilters.category ?? ""}
             onChange={(e) => updateFilter("category", e.target.value)}
-            className="flex h-12 w-full rounded-2xl border border-forex-border bg-white/5 px-4 text-sm text-forex-text outline-none"
+            className="flex h-12 w-full rounded-2xl border border-forex-border bg-[#0d1523]/80 px-4 text-sm text-forex-text outline-none"
           >
             <option value="">Toutes</option>
             {Object.values(LogCategory).map((cat) => (

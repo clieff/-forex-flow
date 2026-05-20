@@ -21,7 +21,7 @@ export function ReceiptPreview({
   rate: number;
 }) {
   return (
-    <div className="receipt-paper mx-auto w-full max-w-md rounded-[34px] border border-slate-200/70 p-8 text-slate-900">
+    <div className="receipt-paper mx-auto w-full max-w-md rounded-[28px] sm:rounded-[34px] border border-slate-200/70 p-5 sm:p-8 text-slate-900">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-slate-500">ForexFlow Pro</p>

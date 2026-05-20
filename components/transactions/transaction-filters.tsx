@@ -41,7 +41,7 @@ export function TransactionFilters({ currencies, currentFilters }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {/* Recherche */}
         <div className="space-y-1 xl:col-span-2">
           <Label>Recherche</Label>
@@ -62,7 +62,7 @@ export function TransactionFilters({ currencies, currentFilters }: Props) {
           <select
             value={currentFilters.type ?? ""}
             onChange={(e) => updateFilter("type", e.target.value)}
-            className="flex h-12 w-full rounded-2xl border border-forex-border bg-white/5 px-4 text-sm text-forex-text outline-none"
+            className="flex h-12 w-full rounded-2xl border border-forex-border bg-[#0d1523]/80 px-4 text-sm text-forex-text outline-none"
           >
             <option value="">Tous</option>
             <option value="BUY">Achat</option>
@@ -76,7 +76,7 @@ export function TransactionFilters({ currencies, currentFilters }: Props) {
           <select
             value={currentFilters.currency ?? ""}
             onChange={(e) => updateFilter("currency", e.target.value)}
-            className="flex h-12 w-full rounded-2xl border border-forex-border bg-white/5 px-4 text-sm text-forex-text outline-none"
+            className="flex h-12 w-full rounded-2xl border border-forex-border bg-[#0d1523]/80 px-4 text-sm text-forex-text outline-none"
           >
             <option value="">Toutes</option>
             {currencies.map((c) => (
@@ -85,37 +85,39 @@ export function TransactionFilters({ currencies, currentFilters }: Props) {
           </select>
         </div>
 
-        {/* Date */}
+        {/* Date De */}
         <div className="space-y-1">
           <Label>De</Label>
           <Input
             type="date"
             defaultValue={currentFilters.from ?? ""}
             onChange={(e) => updateFilter("from", e.target.value)}
-            className="h-12"
+            className="h-12 w-full"
           />
         </div>
-      </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex-1 space-y-1">
+        {/* Date À */}
+        <div className="space-y-1">
           <Label>À</Label>
           <Input
             type="date"
             defaultValue={currentFilters.to ?? ""}
             onChange={(e) => updateFilter("to", e.target.value)}
-            className="h-12 max-w-[200px]"
+            className="h-12 w-full"
           />
         </div>
-        {hasFilters && (
+      </div>
+
+      {hasFilters && (
+        <div className="flex justify-end">
           <button
             onClick={clearFilters}
-            className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-forex-muted transition hover:border-forex-danger/30 hover:text-forex-danger"
+            className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-forex-muted transition hover:border-forex-danger/30 hover:text-forex-danger"
           >
             Effacer les filtres
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

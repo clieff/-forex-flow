@@ -58,15 +58,15 @@ export function ClientsManagement() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="panel p-6">
+    <div className="space-y-4 md:space-y-6">
+      <section className="panel p-4 md:p-6">
         <div className="mb-6">
           <p className="text-sm uppercase tracking-premium text-forex-muted">Customer Relations</p>
           <h2 className="mt-2 text-3xl font-semibold text-white">Gestion des Habitués</h2>
           <p className="mt-2 text-sm text-forex-muted">Enregistrez vos clients réguliers et attribuez-leur des taux fixes personnalisés.</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]">
           <div className="space-y-2">
             <Label>Nom du client</Label>
             <Input placeholder="Ex: Jean Dupont" value={newName} onChange={(e) => setNewName(e.target.value)} />
@@ -84,7 +84,7 @@ export function ClientsManagement() {
         </div>
       </section>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {clients.map((client) => (
           <ClientCard key={client.id} client={client} currencies={currencies} onUpdate={loadData} />
         ))}
@@ -132,7 +132,7 @@ function ClientCard({ client, currencies, onUpdate }: { client: ClientDto; curre
                 Configurer les taux
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md border-white/10 bg-[#0F1625] text-white">
+            <DialogContent className="max-w-[calc(100vw-32px)] sm:max-w-md border-white/10 bg-[#0F1625] text-white">
               <DialogHeader>
                 <DialogTitle>Taux fixes pour {client.name}</DialogTitle>
               </DialogHeader>

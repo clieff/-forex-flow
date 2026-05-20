@@ -39,8 +39,8 @@ export default async function SettingsPage() {
   }));
 
   return (
-    <PageTransition className="space-y-6">
-      <section className="panel p-6">
+    <PageTransition className="space-y-4 md:space-y-6">
+      <section className="panel p-4 md:p-6">
         <p className="text-sm uppercase tracking-premium text-forex-muted">Administration</p>
         <h2 className="mt-2 text-3xl font-semibold text-white">Paramètres et Accès</h2>
         <p className="mt-2 text-sm text-forex-muted">
@@ -48,7 +48,7 @@ export default async function SettingsPage() {
         </p>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-6">
           <Card>
             <CardHeader>

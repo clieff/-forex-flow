@@ -17,7 +17,7 @@ export function VolumeChart({
           Lecture instantanee des volumes en caisse pour ajuster les spreads avec precision.
         </p>
       </CardHeader>
-      <CardContent className="h-[320px]">
+      <CardContent className="h-[220px] md:h-[320px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <defs>

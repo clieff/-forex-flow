@@ -64,18 +64,18 @@ export default async function TransactionsPage({
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
-    <PageTransition className="space-y-6">
+    <PageTransition className="space-y-4 md:space-y-6">
       {/* En-tête */}
-      <section className="panel p-6">
+      <section className="panel p-4 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-premium text-forex-muted">Transaction Ledger</p>
-            <h2 className="mt-2 text-3xl font-semibold text-white">Historique des transactions</h2>
+            <h2 className="mt-2 text-2xl md:text-3xl font-semibold text-white">Historique des transactions</h2>
             <p className="mt-2 text-sm text-forex-muted">
               {total} transaction{total > 1 ? "s" : ""} au total — paginées par {PAGE_SIZE}.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <Link
               href={`/api/transactions/export?${new URLSearchParams({
                 ...(type ? { type } : {}),

@@ -14,16 +14,16 @@ export default async function NewTransactionPage() {
   const data = await getTransactionFormData(session?.user.role ?? "AGENT");
 
   return (
-    <PageTransition className="space-y-6">
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.95fr]">
+    <PageTransition className="space-y-4 md:space-y-6">
+      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-[1fr_0.95fr]">
         <Card>
           <CardHeader>
             <CardTitle>Desk context</CardTitle>
             <p className="text-sm text-forex-muted">Un snapshot des derniers tickets pour garder le tempo du desk.</p>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
+          <CardContent className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-3">
             {data.recentTransactions.slice(0, 3).map((transaction) => (
-              <div key={transaction.id} className="rounded-[24px] border border-white/10 bg-white/[0.03] p-4">
+              <div key={transaction.id} className="rounded-[18px] md:rounded-[24px] border border-white/10 bg-white/[0.03] p-3 md:p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-white">{transaction.currency.code}</p>
                   <Badge
@@ -42,7 +42,7 @@ export default async function NewTransactionPage() {
             ))}
           </CardContent>
         </Card>
-        <section className="panel p-6">
+        <section className="panel p-4 md:p-6">
           <p className="text-sm uppercase tracking-premium text-forex-muted">Execution policy</p>
           <h2 className="mt-2 text-3xl font-semibold text-white">Taux gele, validation nette</h2>
           <p className="mt-2 max-w-2xl text-sm text-forex-muted">

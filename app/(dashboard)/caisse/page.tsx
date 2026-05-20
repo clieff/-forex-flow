@@ -35,9 +35,9 @@ export default async function CaissePage() {
   }));
 
   return (
-    <PageTransition className="space-y-6">
+    <PageTransition className="space-y-4 md:space-y-6">
       {/* En-tête */}
-      <section className="panel p-6">
+      <section className="panel p-4 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-premium text-forex-muted">Treasury Desk</p>
@@ -54,7 +54,7 @@ export default async function CaissePage() {
       </section>
 
       {/* Métriques */}
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 md:gap-4">
         {[
           {
             label: "Entrées XAF (ventes)",
@@ -100,7 +100,7 @@ export default async function CaissePage() {
       </section>
 
       {/* Graphique + Formulaire admin */}
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+      <section className="grid gap-4 md:gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <Card>
           <CardHeader>
             <CardTitle>Flux XAF — 7 derniers jours</CardTitle>
