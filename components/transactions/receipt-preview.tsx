@@ -11,7 +11,7 @@ export function ReceiptPreview({
   amountReceived,
   type,
   clientName,
-  rate
+  rate,
 }: {
   currency?: CurrencyDto;
   amountGiven: number;
@@ -21,36 +21,55 @@ export function ReceiptPreview({
   rate: number;
 }) {
   return (
-    <div className="receipt-paper mx-auto w-full max-w-md rounded-[28px] sm:rounded-[34px] border border-slate-200/70 p-5 sm:p-8 text-slate-900">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="receipt-paper mx-auto w-full max-w-xs lg:max-w-sm rounded-[20px] lg:rounded-[28px] border border-slate-200/70 p-4 lg:p-6 text-slate-900 sticky top-6">
+      <div className="mb-6 flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-slate-500">ForexFlow Pro</p>
-          <h3 className="mt-2 text-2xl font-semibold">Transaction Slip</h3>
+          <p className="text-xs uppercase tracking-[0.22em] text-slate-500">
+            ForexFlow
+          </p>
+          <h3 className="mt-1 text-lg lg:text-2xl font-semibold">Slip</h3>
         </div>
-        <div className="rounded-2xl border border-slate-200 px-4 py-2 text-right">
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{type}</p>
-          <p className="mt-1 text-sm font-medium">{format(new Date(), "dd/MM/yyyy HH:mm")}</p>
+        <div className="rounded-xl lg:rounded-2xl border border-slate-200 px-3 lg:px-4 py-1 lg:py-2 text-right">
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+            {type}
+          </p>
+          <p className="mt-0.5 text-xs lg:text-sm font-medium">
+            {format(new Date(), "dd/MM HH:mm")}
+          </p>
         </div>
       </div>
 
-      <div className="space-y-4 border-y border-dashed border-slate-300 py-6">
-        <ReceiptRow label="Client" value={clientName || "Walk-in client"} />
+      <div className="space-y-3 border-y border-dashed border-slate-300 py-4 lg:py-5">
+        <ReceiptRow label="Client" value={clientName || "Walk-in"} />
         <ReceiptRow label="Devise" value={currency?.code ?? "--"} />
         <ReceiptRow
           label="Montant donne"
-          value={type === "BUY" ? formatMoney(amountGiven, currency?.code) : formatMoney(amountGiven)}
+          value={
+            type === "BUY"
+              ? formatMoney(amountGiven, currency?.code)
+              : formatMoney(amountGiven)
+          }
         />
         <ReceiptRow
           label="Montant recu"
-          value={type === "BUY" ? formatMoney(amountReceived) : formatMoney(amountReceived, currency?.code)}
+          value={
+            type === "BUY"
+              ? formatMoney(amountReceived)
+              : formatMoney(amountReceived, currency?.code)
+          }
         />
-        <ReceiptRow label="Taux applique" value={rate ? `${rate.toFixed(2)} XAF` : "--"} />
+        <ReceiptRow
+          label="Taux"
+          value={rate ? `${rate.toFixed(2)} XAF` : "--"}
+        />
       </div>
 
-      <div className="mt-6 rounded-[24px] bg-slate-900 p-5 text-white">
-        <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">Merci pour votre confiance</p>
-        <p className="mt-2 text-sm leading-6 text-slate-300">
-          Recu de demonstration genere en direct, pret pour l'export PDF et l'archivage interne.
+      <div className="mt-4 lg:mt-5 rounded-[16px] lg:rounded-[24px] bg-slate-900 p-3 lg:p-4 text-white">
+        <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">
+          Merci!
+        </p>
+        <p className="mt-1 text-xs leading-5 text-slate-300">
+          Recu genere et pret pour l'export.
         </p>
       </div>
     </div>

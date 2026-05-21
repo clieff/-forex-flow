@@ -5,7 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { LoaderCircle, ReceiptText, Sparkles, UserPlus, Users } from "lucide-react";
+import {
+  LoaderCircle,
+  ReceiptText,
+  Sparkles,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { transactionSchema } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
@@ -33,14 +39,15 @@ type TransactionFormValues = {
   clientId?: string;
   supplierId?: string;
   isDebt?: boolean;
+  customRate?: number | null;
 };
 
-export function NewTransactionForm({ 
-  currencies, 
+export function NewTransactionForm({
+  currencies,
   clients = [],
   suppliers = [],
-  stockBalances = []
-}: { 
+  stockBalances = [],
+}: {
   currencies: CurrencyDto[];
   clients?: RegularClient[];
   suppliers?: { id: string; name: string }[];
@@ -58,32 +65,44 @@ export function NewTransactionForm({
       clientName: "",
       clientId: "",
       supplierId: "GENERAL",
-      isDebt: false
-    }
+      isDebt: false,
+      customRate: null,
+    },
   });
 
   const values = form.watch();
-  const selectedCurrency = currencies.find((currency) => currency.code === values.currencyCode);
-  const selectedClient = clients.find(c => c.id === values.clientId);
+  const selectedCurrency = currencies.find(
+    (currency) => currency.code === values.currencyCode,
+  );
+  const selectedClient = clients.find((c) => c.id === values.clientId);
 
   const currentStock = useMemo(() => {
     if (!values.currencyCode) return 0;
-    const balance = stockBalances.find(b => b.code === values.currencyCode);
+    const balance = stockBalances.find((b) => b.code === values.currencyCode);
     if (!balance) return 0;
-    
+
     if (!values.supplierId || values.supplierId === "GENERAL") {
       return Number(balance.balance);
     }
-    
-    const supplierStock = balance.suppliers.find((s: any) => s.id === values.supplierId);
+
+    const supplierStock = balance.suppliers.find(
+      (s: any) => s.id === values.supplierId,
+    );
     return supplierStock ? Number(supplierStock.balance) : 0;
   }, [values.supplierId, values.currencyCode, stockBalances]);
 
   const currentDebt = useMemo(() => {
-    if (!values.supplierId || values.supplierId === "GENERAL" || !values.currencyCode) return 0;
-    const balance = stockBalances.find(b => b.code === values.currencyCode);
+    if (
+      !values.supplierId ||
+      values.supplierId === "GENERAL" ||
+      !values.currencyCode
+    )
+      return 0;
+    const balance = stockBalances.find((b) => b.code === values.currencyCode);
     if (!balance) return 0;
-    const supplierStock = balance.suppliers.find((s: any) => s.id === values.supplierId);
+    const supplierStock = balance.suppliers.find(
+      (s: any) => s.id === values.supplierId,
+    );
     return supplierStock ? Number(supplierStock.debt || 0) : 0;
   }, [values.supplierId, values.currencyCode, stockBalances]);
 
@@ -99,11 +118,18 @@ export function NewTransactionForm({
       return { amountReceived: 0, rate: 0 };
     }
 
-    let rate = values.type === "BUY" ? selectedCurrency.buyRate : selectedCurrency.sellRate;
+    // Use custom rate if provided, otherwise use default rate logic
+    let rate =
+      values.customRate ??
+      (values.type === "BUY"
+        ? selectedCurrency.buyRate
+        : selectedCurrency.sellRate);
 
-    // Use fixed client rate if available
-    if (isRegular && selectedClient) {
-      const fixed = selectedClient.fixedRates.find(r => r.currencyCode === values.currencyCode);
+    // Use fixed client rate if available and no custom rate provided
+    if (!values.customRate && isRegular && selectedClient) {
+      const fixed = selectedClient.fixedRates.find(
+        (r) => r.currencyCode === values.currencyCode,
+      );
       if (fixed) {
         if (values.type === "BUY" && fixed.buyRate) {
           rate = fixed.buyRate;
@@ -116,33 +142,42 @@ export function NewTransactionForm({
     if (values.type === "BUY") {
       return {
         amountReceived: Number((values.amountGiven * rate).toFixed(2)),
-        rate
+        rate,
       };
     }
 
     return {
       amountReceived: Number((values.amountGiven / rate).toFixed(2)),
-      rate
+      rate,
     };
-  }, [selectedCurrency, values.amountGiven, values.type, isRegular, selectedClient, values.currencyCode]);
+  }, [
+    selectedCurrency,
+    values.amountGiven,
+    values.type,
+    isRegular,
+    selectedClient,
+    values.currencyCode,
+    values.customRate,
+  ]);
 
   async function onSubmit(payload: TransactionFormValues) {
     const response = await fetch("/api/transactions", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         ...payload,
-        supplierId: payload.supplierId === "GENERAL" ? undefined : payload.supplierId,
+        supplierId:
+          payload.supplierId === "GENERAL" ? undefined : payload.supplierId,
         clientName: isRegular ? selectedClient?.name : payload.clientName,
-        clientId: isRegular ? payload.clientId : undefined
-      })
+        clientId: isRegular ? payload.clientId : undefined,
+      }),
     });
 
     if (!response.ok) {
       toast.error("Transaction refusee", {
-        description: "Verifier les valeurs puis recommencez."
+        description: "Verifier les valeurs puis recommencez.",
       });
       return;
     }
@@ -151,41 +186,44 @@ export function NewTransactionForm({
     setTransactionId(data.id);
     toast.success("Transaction enregistree", {
       description: "Le recu PDF est deja pret au telechargement.",
-      icon: <Sparkles className="h-4 w-4 animate-pulse text-forex-mint" />
+      icon: <Sparkles className="h-4 w-4 animate-pulse text-forex-mint" />,
     });
     router.refresh();
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
       <section className="panel p-6">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-premium text-forex-muted">Execution Desk</p>
-            <h3 className="mt-2 text-3xl font-semibold text-white">Nouvelle transaction</h3>
-          </div>
-          <div className="flex gap-2 rounded-2xl border border-white/10 bg-white/5 p-1">
-            <button
-              type="button"
-              onClick={() => setIsRegular(false)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm transition-all ${!isRegular ? "bg-white/10 text-white" : "text-forex-muted hover:text-white"}`}
-            >
-              <UserPlus className="h-4 w-4" />
-              Nouveau
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsRegular(true)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm transition-all ${isRegular ? "bg-white/10 text-white" : "text-forex-muted hover:text-white"}`}
-            >
-              <Users className="h-4 w-4" />
-              Habitué
-            </button>
-          </div>
+        <div className="mb-8">
+          <p className="text-sm uppercase tracking-premium text-forex-muted">
+            Execution Desk
+          </p>
+          <h3 className="mt-2 text-2xl lg:text-3xl font-semibold text-white">
+            Nouvelle transaction
+          </h3>
+        </div>
+
+        <div className="mb-6 flex gap-2 rounded-2xl border border-white/10 bg-white/5 p-1 w-fit">
+          <button
+            type="button"
+            onClick={() => setIsRegular(false)}
+            className={`flex items-center gap-2 rounded-xl px-3 lg:px-4 py-2 text-sm transition-all ${!isRegular ? "bg-white/10 text-white" : "text-forex-muted hover:text-white"}`}
+          >
+            <UserPlus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nouveau</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsRegular(true)}
+            className={`flex items-center gap-2 rounded-xl px-3 lg:px-4 py-2 text-sm transition-all ${isRegular ? "bg-white/10 text-white" : "text-forex-muted hover:text-white"}`}
+          >
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Habitué</span>
+          </button>
         </div>
 
         <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-3">
             <div className="space-y-2">
               <Label>Type</Label>
               <Controller
@@ -222,11 +260,29 @@ export function NewTransactionForm({
                 )}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center justify-between">
+                Taux personnalisé
+                <span className="text-xs text-forex-muted">Optionnel</span>
+              </Label>
+              <Input
+                type="number"
+                step="0.0001"
+                placeholder={`Défaut: ${computed.rate.toFixed(2)}`}
+                {...form.register("customRate", { valueAsNumber: true })}
+                className="h-12 rounded-2xl border-forex-border bg-white/5"
+              />
+            </div>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>{values.type === "BUY" ? "Montant donne (FX)" : "Montant donne (XAF)"}</Label>
+              <Label>
+                {values.type === "BUY"
+                  ? "Montant donne (FX)"
+                  : "Montant donne (XAF)"}
+              </Label>
               <Input
                 type="number"
                 step="0.01"
@@ -268,7 +324,9 @@ export function NewTransactionForm({
           {values.type === "SELL" && (
             <div className="rounded-2xl border border-forex-mint/10 bg-forex-mint/5 p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="text-forex-mint">Sélectionner la source du stock</Label>
+                <Label className="text-forex-mint">
+                  Sélectionner la source du stock
+                </Label>
                 <Badge className="border-forex-mint/20 bg-forex-mint/10 text-forex-mint">
                   Dispo: {currentStock.toLocaleString()} {values.currencyCode}
                 </Badge>
@@ -282,15 +340,29 @@ export function NewTransactionForm({
                     required={values.type === "SELL"}
                     className="flex h-12 w-full rounded-2xl border border-forex-mint/30 bg-white/5 px-4 text-sm text-white outline-none focus:border-forex-mint"
                   >
-                    <option value="GENERAL">Stock Général / Bureau (Solde total)</option>
+                    <option value="GENERAL">
+                      Stock Général / Bureau (Solde total)
+                    </option>
                     <optgroup label="Stocks Fournisseurs">
                       {suppliers.map((s) => {
-                        const balance = stockBalances.find(b => b.code === values.currencyCode);
-                        const sStock = balance?.suppliers.find((ss: any) => ss.id === s.id)?.balance ?? 0;
-                        const sRate = balance?.suppliers.find((ss: any) => ss.id === s.id)?.averageBuyRate ?? null;
+                        const balance = stockBalances.find(
+                          (b) => b.code === values.currencyCode,
+                        );
+                        const sStock =
+                          balance?.suppliers.find((ss: any) => ss.id === s.id)
+                            ?.balance ?? 0;
+                        const sRate =
+                          balance?.suppliers.find((ss: any) => ss.id === s.id)
+                            ?.averageBuyRate ?? null;
                         return (
-                          <option key={s.id} value={s.id} disabled={Number(sStock) <= 0}>
-                            {s.name} (Solde: {Number(sStock).toLocaleString()} {values.currencyCode}{sRate ? ` · PMA ${Number(sRate).toFixed(4)}` : ""})
+                          <option
+                            key={s.id}
+                            value={s.id}
+                            disabled={Number(sStock) <= 0}
+                          >
+                            {s.name} (Solde: {Number(sStock).toLocaleString()}{" "}
+                            {values.currencyCode}
+                            {sRate ? ` · PMA ${Number(sRate).toFixed(4)}` : ""})
                           </option>
                         );
                       })}
@@ -298,11 +370,14 @@ export function NewTransactionForm({
                   </select>
                 )}
               />
-              {values.type === "SELL" && computed.amountReceived > currentStock && (
-                <p className="text-sm text-forex-danger font-medium">
-                  ⚠️ Attention: Le montant de la vente ({computed.amountReceived}) dépasse le stock disponible chez ce fournisseur.
-                </p>
-              )}
+              {values.type === "SELL" &&
+                computed.amountReceived > currentStock && (
+                  <p className="text-sm text-forex-danger font-medium">
+                    ⚠️ Attention: Le montant de la vente (
+                    {computed.amountReceived}) dépasse le stock disponible chez
+                    ce fournisseur.
+                  </p>
+                )}
             </div>
           )}
 
@@ -315,9 +390,14 @@ export function NewTransactionForm({
                   {...form.register("isDebt")}
                 />
                 <div className="text-sm">
-                  <span className="text-white group-hover:text-forex-mint transition">Recouvrer une créance</span>
+                  <span className="text-white group-hover:text-forex-mint transition">
+                    Recouvrer une créance
+                  </span>
                   {currentDebt > 0 && (
-                    <p className="text-xs text-forex-muted">Créance actuelle: {currentDebt.toLocaleString()} {values.currencyCode}</p>
+                    <p className="text-xs text-forex-muted">
+                      Créance actuelle: {currentDebt.toLocaleString()}{" "}
+                      {values.currencyCode}
+                    </p>
                   )}
                   <p className="text-xs text-forex-muted">{currentDebtLabel}</p>
                 </div>
@@ -325,40 +405,75 @@ export function NewTransactionForm({
             </div>
           )}
 
-          <div className="rounded-[26px] border border-white/10 bg-white/[0.03] p-5">
-            <div className="flex items-center justify-between">
+          <div className="rounded-[26px] border border-white/10 bg-white/[0.03] p-4 lg:p-5">
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-premium text-forex-muted">Calcul instantane</p>
-                <p className="mt-2 text-3xl font-semibold text-white">{computed.amountReceived.toFixed(2)}</p>
+                <p className="text-xs uppercase tracking-premium text-forex-muted">
+                  Calcul instantane
+                </p>
+                <p className="mt-1 text-2xl lg:text-3xl font-semibold text-white">
+                  {computed.amountReceived.toFixed(2)}
+                </p>
               </div>
               <div className="text-right">
-                <p className="text-xs uppercase tracking-premium text-forex-muted">Taux applique</p>
-                <p className="mt-2 text-xl font-semibold text-forex-mint">{computed.rate.toFixed(2)} XAF</p>
+                <p className="text-xs uppercase tracking-premium text-forex-muted">
+                  Taux applique
+                </p>
+                <p className="mt-1 text-lg lg:text-xl font-semibold text-forex-mint">
+                  {computed.rate.toFixed(2)}
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Button size="lg" disabled={form.formState.isSubmitting}>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              size="lg"
+              disabled={form.formState.isSubmitting}
+              className="flex-1"
+            >
               {form.formState.isSubmitting ? (
                 <LoaderCircle className="h-4 w-4 animate-spin" />
               ) : (
                 <ReceiptText className="h-4 w-4" />
               )}
-              Valider la transaction
+              Valider
             </Button>
             {transactionId ? (
-              <Link href={`/api/transaction/${transactionId}/receipt`} target="_blank">
-                <Button type="button" variant="secondary" size="lg">
-                  Ouvrir le recu PDF
+              <Link
+                href={`/api/transaction/${transactionId}/receipt`}
+                target="_blank"
+                className="flex-1"
+              >
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  className="w-full"
+                >
+                  Telecharger PDF
                 </Button>
               </Link>
             ) : null}
           </div>
         </form>
+
+        <div className="lg:hidden mt-8 border-t border-white/10 pt-8">
+          <p className="text-sm uppercase tracking-premium text-forex-muted mb-4">
+            Apercu du recu
+          </p>
+          <ReceiptPreview
+            currency={selectedCurrency}
+            amountGiven={values.amountGiven ?? 0}
+            amountReceived={computed.amountReceived}
+            type={values.type}
+            clientName={isRegular ? selectedClient?.name : values.clientName}
+            rate={computed.rate}
+          />
+        </div>
       </section>
 
-      <section className="panel flex items-center justify-center p-6">
+      <aside className="hidden lg:flex lg:items-center lg:justify-center">
         <ReceiptPreview
           currency={selectedCurrency}
           amountGiven={values.amountGiven ?? 0}
@@ -367,7 +482,7 @@ export function NewTransactionForm({
           clientName={isRegular ? selectedClient?.name : values.clientName}
           rate={computed.rate}
         />
-      </section>
+      </aside>
     </div>
   );
 }
