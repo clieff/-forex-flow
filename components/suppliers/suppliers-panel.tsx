@@ -87,12 +87,6 @@ export function SuppliersPanel() {
           </Button>
         </div>
       </div>
-          <Button onClick={createSupplier} disabled={loading}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Ajouter
-          </Button>
-        </div>
-      </div>
 
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
         {items.map((supplier) => (
