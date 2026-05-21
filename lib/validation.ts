@@ -38,3 +38,28 @@ export const clientRateSchema = z.object({
   buyRate: z.number().positive().optional().nullable(),
   sellRate: z.number().positive().optional().nullable()
 });
+
+export const clientDebtAdjustmentSchema = z.object({
+  currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()),
+  amount: z.number().positive(),
+  operation: z.enum(["INCREASE", "DECREASE"]),
+  note: z.string().trim().max(200).optional().or(z.literal(""))
+});
+
+export const currencySchema = z
+  .object({
+    code: z.string().trim().min(3).max(3).transform((value) => value.toUpperCase()),
+    name: z.string().trim().min(2).max(80),
+    flagCode: z.string().trim().min(2).max(8),
+    buyRate: z.number().positive(),
+    sellRate: z.number().positive()
+  })
+  .superRefine((value, ctx) => {
+    if (value.sellRate < value.buyRate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Le taux de vente doit etre superieur ou egal au taux d'achat",
+        path: ["sellRate"]
+      });
+    }
+  });

@@ -45,7 +45,15 @@ export default async function TransactionsPage({
     ...(type ? { type } : {}),
     ...(currency ? { currencyCode: currency } : {}),
     ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}),
-    ...(q ? { OR: [{ clientName: { contains: q, mode: "insensitive" as const } }, { receiptNumber: { contains: q, mode: "insensitive" as const } }] } : {})
+    ...(q
+      ? {
+          OR: [
+            { clientName: { contains: q, mode: "insensitive" as const } },
+            { client: { name: { contains: q, mode: "insensitive" as const } } },
+            { receiptNumber: { contains: q, mode: "insensitive" as const } }
+          ]
+        }
+      : {})
   };
 
   const [total, transactions, currencies, agents] = await Promise.all([

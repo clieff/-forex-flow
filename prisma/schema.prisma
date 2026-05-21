@@ -57,7 +57,8 @@ model Currency {
   transactions Transaction[]
   stockMoves   StockMovement[]
   clientRates  ClientRate[]
-  debts        SupplierDebt[]
+  supplierDebts SupplierDebt[]
+  clientDebts   ClientDebt[]
 }
 
 model RateHistory {
@@ -79,7 +80,23 @@ model Client {
   contact      String?
   fixedRates   ClientRate[]
   transactions Transaction[]
+  debts        ClientDebt[]
   createdAt    DateTime      @default(now())
+}
+
+model ClientDebt {
+  id           String   @id @default(cuid())
+  clientId     String
+  client       Client   @relation(fields: [clientId], references: [id])
+  currencyCode String
+  currency     Currency @relation(fields: [currencyCode], references: [code])
+  amount       Decimal  @db.Decimal(18, 2)
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([clientId, currencyCode])
+  @@index([clientId, updatedAt])
 }
 
 model ClientRate {
@@ -112,6 +129,9 @@ model Transaction {
   createdById    String
   createdAt      DateTime       @default(now())
   stockMove      StockMovement?
+
+  @@index([clientId, createdAt])
+  @@index([currencyCode, createdAt])
 }
 
 enum Type {
@@ -134,6 +154,8 @@ model StockMovement {
   currency      Currency       @relation(fields: [currencyCode], references: [code])
   direction     StockDirection
   amount        Decimal        @db.Decimal(18, 2)
+  unitPrice     Decimal?       @db.Decimal(18, 4)
+  totalCostXaf  Decimal?       @db.Decimal(18, 2)
   reason        StockReason
   note          String?
   supplierId    String?
@@ -143,6 +165,9 @@ model StockMovement {
   createdById   String
   createdBy     User           @relation("StockMoves", fields: [createdById], references: [id])
   createdAt     DateTime       @default(now())
+
+  @@index([supplierId, currencyCode, createdAt])
+  @@index([currencyCode, reason, createdAt])
 }
 
 enum StockDirection {
@@ -169,6 +194,7 @@ model SupplierDebt {
   updatedAt    DateTime @updatedAt
 
   @@unique([supplierId, currencyCode])
+  @@index([supplierId, updatedAt])
 }
 
 // ─── Caisse XAF ───────────────────────────────────────────────────────────────

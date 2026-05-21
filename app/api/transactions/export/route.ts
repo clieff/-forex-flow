@@ -25,12 +25,15 @@ export async function GET(request: Request) {
         ...(to ? { lte: new Date(to + "T23:59:59") } : {})
       }
     } : {}),
-    ...(q ? {
-      OR: [
-        { clientName: { contains: q, mode: "insensitive" as const } },
-        { receiptNumber: { contains: q, mode: "insensitive" as const } }
-      ]
-    } : {})
+    ...(q
+      ? {
+          OR: [
+            { clientName: { contains: q, mode: "insensitive" as const } },
+            { client: { name: { contains: q, mode: "insensitive" as const } } },
+            { receiptNumber: { contains: q, mode: "insensitive" as const } }
+          ]
+        }
+      : {})
   };
 
   const transactions = await prisma.transaction.findMany({

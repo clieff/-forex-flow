@@ -104,7 +104,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
               {results.clients.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => handleSelect(`/transactions?q=${c.name}`)}
+                  onClick={() => handleSelect(`/transactions?q=${encodeURIComponent(c.name)}`)}
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/[0.04] transition"
                 >
                   <div className="p-2 rounded-lg bg-white/[0.05] text-white">

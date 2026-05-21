@@ -104,7 +104,7 @@ export async function POST(request: Request) {
       // SELL (OUT) = On donne FX au client pour le compte du fournisseur, si c'est une dette, ça augmente ce qu'il nous doit.
       // Ici le user dit "reccouvrir la dete" -> donc on reçoit du FX pour éponger une créance.
       const amountFx = parsed.data.type === "BUY" ? amountGiven : amountReceived;
-      const debtImpact = parsed.data.type === "BUY" ? amountFx.neg() : amountFx;
+      const debtImpact = parsed.data.type === "BUY" ? amountFx : amountFx.neg();
 
       await tx.supplierDebt.upsert({
         where: {

@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRequestIp } from "@/lib/rate-limit";
 import { createLog } from "@/lib/logs";
+import { updateCurrencyBuyRate } from "@/lib/pricing";
 
 export async function POST(request: Request) {
   const ip = getRequestIp(request);
@@ -26,6 +27,8 @@ export async function POST(request: Request) {
     note?: string;
     reason?: "SUPPLIER_PURCHASE" | "ADJUSTMENT";
     isDebt?: boolean;
+    unitPrice?: number | null;
+    totalCostXaf?: number | null;
   };
 
   const currencyCode = (body.currencyCode ?? "").trim().toUpperCase();
@@ -41,11 +44,19 @@ export async function POST(request: Request) {
   if (!body.amount || body.amount <= 0) {
     return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
   }
-  const amountNum = body.amount;
+  const amountNum = Number(body.amount);
 
   const reason = body.reason ?? "ADJUSTMENT";
   if (reason !== "SUPPLIER_PURCHASE" && reason !== "ADJUSTMENT") {
     return NextResponse.json({ error: "Invalid reason" }, { status: 400 });
+  }
+
+  const supplierId = body.supplierId ? body.supplierId : null;
+  if (reason === "SUPPLIER_PURCHASE" && !supplierId) {
+    return NextResponse.json({ error: "Supplier is required for supplier purchases" }, { status: 400 });
+  }
+  if (reason === "SUPPLIER_PURCHASE" && direction !== "IN") {
+    return NextResponse.json({ error: "Supplier purchases must be stock entries" }, { status: 400 });
   }
 
   const currency = await prisma.currency.findUnique({ where: { code: currencyCode } });
@@ -53,11 +64,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Currency not found" }, { status: 404 });
   }
 
-  const supplierId = body.supplierId ? body.supplierId : null;
   if (supplierId) {
     const supplier = await prisma.supplier.findUnique({ where: { id: supplierId } });
     if (!supplier) {
       return NextResponse.json({ error: "Supplier not found" }, { status: 404 });
+    }
+  }
+
+  const actualAmount = new Prisma.Decimal(amountNum).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+  const totalExpected = body.totalAmount ? new Prisma.Decimal(body.totalAmount).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP) : actualAmount;
+  const unreceived = totalExpected.minus(actualAmount);
+
+  let unitPrice: Prisma.Decimal | null = null;
+  let totalCostXaf: Prisma.Decimal | null = null;
+
+  if (reason === "SUPPLIER_PURCHASE" && direction === "IN") {
+    const rawUnitPrice = body.unitPrice ? Number(body.unitPrice) : null;
+    const rawTotalCost = body.totalCostXaf ? Number(body.totalCostXaf) : null;
+
+    if (rawUnitPrice !== null && rawUnitPrice > 0) {
+      unitPrice = new Prisma.Decimal(rawUnitPrice).toDecimalPlaces(4, Prisma.Decimal.ROUND_HALF_UP);
+    }
+    if (rawTotalCost !== null && rawTotalCost > 0) {
+      totalCostXaf = new Prisma.Decimal(rawTotalCost).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+    }
+
+    if (!unitPrice && totalCostXaf) {
+      unitPrice = totalCostXaf.div(actualAmount).toDecimalPlaces(4, Prisma.Decimal.ROUND_HALF_UP);
+    }
+    if (!totalCostXaf && unitPrice) {
+      totalCostXaf = unitPrice.mul(actualAmount).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+    }
+
+    if (!unitPrice || !totalCostXaf) {
+      return NextResponse.json({ error: "Purchase price data is required for supplier purchases" }, { status: 400 });
     }
   }
 
@@ -66,7 +106,9 @@ export async function POST(request: Request) {
       data: {
         currencyCode,
         direction,
-        amount: new Prisma.Decimal(amountNum).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP),
+        amount: actualAmount,
+        unitPrice,
+        totalCostXaf,
         reason: body.isDebt ? "DEBT_SETTLEMENT" : reason,
         note: body.note?.trim() || null,
         supplierId,
@@ -75,19 +117,11 @@ export async function POST(request: Request) {
     });
 
     if (supplierId) {
-      const actualAmount = new Prisma.Decimal(amountNum);
-      const totalExpected = body.totalAmount ? new Prisma.Decimal(body.totalAmount) : actualAmount;
-      const unreceived = totalExpected.minus(actualAmount);
-
-      // Calcul du changement de dette
       let debtChange = new Prisma.Decimal(0);
-      
+
       if (body.isDebt) {
-        // Cas 1: C'est un règlement de dette direct
-        debtChange = direction === "IN" ? actualAmount.neg() : actualAmount;
+        debtChange = direction === "IN" ? actualAmount : actualAmount.neg();
       } else if (unreceived.gt(0)) {
-        // Cas 2: Achat avec reliquat (le fournisseur nous doit le reste)
-        // Si IN: On a reçu moins que prévu, le fournisseur nous doit la différence
         debtChange = direction === "IN" ? unreceived.neg() : unreceived;
       }
 
@@ -114,10 +148,17 @@ export async function POST(request: Request) {
     return stockMove;
   });
 
+  if (reason === "SUPPLIER_PURCHASE" && direction === "IN") {
+    await updateCurrencyBuyRate(currencyCode);
+  }
+
   await createLog({
     category: "STOCK",
-    action: body.isDebt ? "DEBT_LOG" : `STOCK_${move.direction}`,
-    details: `${move.amount} ${move.currencyCode} - ${body.isDebt ? "CRÉANCE" : move.reason}${move.note ? ` (${move.note})` : ""}`,
+    action: body.isDebt ? "SUPPLIER_DEBT_SETTLEMENT" : `STOCK_${move.direction}`,
+    details:
+      `${move.amount} ${move.currencyCode} - ${move.reason}` +
+      (move.unitPrice ? ` @ ${move.unitPrice} XAF` : "") +
+      (move.note ? ` (${move.note})` : ""),
     userId: session.user.id
   });
 

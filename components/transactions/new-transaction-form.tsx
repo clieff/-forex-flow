@@ -13,7 +13,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ReceiptPreview } from "@/components/transactions/receipt-preview";
-import type { CurrencyDto, ClientDto } from "@/types/dto";
+import type { CurrencyDto } from "@/types/dto";
+
+type RegularClient = {
+  id: string;
+  name: string;
+  fixedRates: Array<{
+    currencyCode: string;
+    buyRate: number | null;
+    sellRate: number | null;
+  }>;
+};
 
 type TransactionFormValues = {
   type: "BUY" | "SELL";
@@ -32,7 +42,7 @@ export function NewTransactionForm({
   stockBalances = []
 }: { 
   currencies: CurrencyDto[];
-  clients?: ClientDto[];
+  clients?: RegularClient[];
   suppliers?: { id: string; name: string }[];
   stockBalances?: any[];
 }) {
@@ -76,6 +86,13 @@ export function NewTransactionForm({
     const supplierStock = balance.suppliers.find((s: any) => s.id === values.supplierId);
     return supplierStock ? Number(supplierStock.debt || 0) : 0;
   }, [values.supplierId, values.currencyCode, stockBalances]);
+
+  const currentDebtLabel =
+    currentDebt < 0
+      ? `Le fournisseur vous doit ${Math.abs(currentDebt).toLocaleString()} ${values.currencyCode}`
+      : currentDebt > 0
+        ? `Vous devez ${currentDebt.toLocaleString()} ${values.currencyCode} au fournisseur`
+        : "Aucune dette en cours";
 
   const computed = useMemo(() => {
     if (!selectedCurrency || !values.amountGiven) {
@@ -270,9 +287,10 @@ export function NewTransactionForm({
                       {suppliers.map((s) => {
                         const balance = stockBalances.find(b => b.code === values.currencyCode);
                         const sStock = balance?.suppliers.find((ss: any) => ss.id === s.id)?.balance ?? 0;
+                        const sRate = balance?.suppliers.find((ss: any) => ss.id === s.id)?.averageBuyRate ?? null;
                         return (
                           <option key={s.id} value={s.id} disabled={Number(sStock) <= 0}>
-                            {s.name} (Solde: {Number(sStock).toLocaleString()} {values.currencyCode})
+                            {s.name} (Solde: {Number(sStock).toLocaleString()} {values.currencyCode}{sRate ? ` · PMA ${Number(sRate).toFixed(4)}` : ""})
                           </option>
                         );
                       })}
@@ -301,6 +319,7 @@ export function NewTransactionForm({
                   {currentDebt > 0 && (
                     <p className="text-xs text-forex-muted">Créance actuelle: {currentDebt.toLocaleString()} {values.currencyCode}</p>
                   )}
+                  <p className="text-xs text-forex-muted">{currentDebtLabel}</p>
                 </div>
               </label>
             </div>

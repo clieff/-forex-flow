@@ -16,7 +16,16 @@ export async function GET() {
       name: b.name,
       inTotal: toNumber(b.inTotal),
       outTotal: toNumber(b.outTotal),
-      balance: toNumber(b.balance)
+      balance: toNumber(b.balance),
+      weightedBuyRate: b.weightedBuyRate ? toNumber(b.weightedBuyRate) : null,
+      suppliers: b.suppliers.map((supplier) => ({
+        id: supplier.id,
+        name: supplier.name,
+        balance: toNumber(supplier.balance),
+        debt: toNumber(supplier.debt),
+        averageBuyRate: supplier.averageBuyRate ? toNumber(supplier.averageBuyRate) : null,
+        lastBuyRate: supplier.lastBuyRate ? toNumber(supplier.lastBuyRate) : null
+      }))
     }))
   });
 }

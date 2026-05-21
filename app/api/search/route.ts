@@ -21,11 +21,13 @@ export async function GET(request: Request) {
         OR: [
           { receiptNumber: { contains: q, mode: "insensitive" } },
           { id: { contains: q, mode: "insensitive" } },
-          { clientName: { contains: q, mode: "insensitive" } }
+          { clientName: { contains: q, mode: "insensitive" } },
+          { client: { name: { contains: q, mode: "insensitive" } } }
         ]
       },
       include: {
-        currency: { select: { code: true } }
+        currency: { select: { code: true } },
+        client: { select: { name: true } }
       },
       take: 5,
       orderBy: { createdAt: "desc" }
@@ -46,7 +48,7 @@ export async function GET(request: Request) {
     transactions: transactions.map(tx => ({
       id: tx.id,
       receiptNumber: tx.receiptNumber ?? tx.id.slice(0, 8),
-      clientName: tx.clientName ?? "Walk-in",
+      clientName: tx.client?.name ?? tx.clientName ?? "Walk-in",
       type: tx.type,
       currencyCode: tx.currencyCode,
       date: tx.createdAt
