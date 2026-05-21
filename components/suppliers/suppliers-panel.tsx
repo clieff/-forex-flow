@@ -80,7 +80,12 @@ export function SuppliersPanel() {
             onChange={(e) => setContact(e.target.value)}
             className="h-12 rounded-2xl border-forex-border bg-white/5"
           />
-          <Button onClick={createSupplier} disabled={loading} size="lg" className="h-12">
+          <Button
+            onClick={createSupplier}
+            disabled={loading}
+            size="lg"
+            className="h-12"
+          >
             <PlusCircle className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Ajouter</span>
             <span className="sm:hidden">+</span>
@@ -104,14 +109,14 @@ export function SuppliersPanel() {
 
 function SupplierCard({ supplier }: { supplier: SupplierDto }) {
   return (
-    <Card className="border-white/10 bg-white/5">
+    <Card className="w-full border-white/10 bg-white/5">
       <CardHeader className="gap-4 border-b border-white/10 bg-white/[0.03]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg lg:text-xl text-white truncate">
+            <CardTitle className="text-lg lg:text-xl text-white truncate break-words">
               {supplier.name}
             </CardTitle>
-            <p className="mt-1 text-sm text-forex-muted truncate">
+            <p className="mt-1 text-sm text-forex-muted truncate break-words">
               {supplier.contact || "Aucun contact renseigne"}
             </p>
           </div>
@@ -158,12 +163,12 @@ function SupplierCard({ supplier }: { supplier: SupplierDto }) {
             </p>
           </div>
 
-          {supplier.positions.length > 0 ? (
+            {supplier.positions.length > 0 ? (
             <div className="grid gap-2 grid-cols-2 lg:grid-cols-3">
               {supplier.positions.map((position) => (
                 <div
                   key={position.currencyCode}
-                  className="rounded-xl lg:rounded-2xl border border-white/10 bg-[#0F1625] p-3"
+                  className="rounded-xl lg:rounded-2xl border border-white/10 bg-[#0F1625] p-3 min-w-0"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-semibold text-white text-sm">
@@ -220,7 +225,7 @@ function SupplierCard({ supplier }: { supplier: SupplierDto }) {
               {supplier.debts.map((debt) => (
                 <div
                   key={debt.id}
-                  className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                  className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 min-w-0"
                 >
                   <div className="min-w-0">
                     <p className="font-semibold text-white text-sm">
@@ -263,12 +268,12 @@ function SupplierCard({ supplier }: { supplier: SupplierDto }) {
             supplier.recentMovements.map((movement) => (
               <div
                 key={movement.id}
-                className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                className="rounded-xl border border-white/10 bg-white/[0.03] p-3 min-w-0"
               >
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-white text-sm">
-                      {movement.direction === "IN" ? "Entree" : "Sortie"}{" "}
+                    <p className="font-semibold text-white text-sm whitespace-normal break-words">
+                      {movement.direction === "IN" ? "Entree" : "Sortie"} {" "}
                       {movement.currencyCode} · {movement.reason}
                     </p>
                     <p className="text-xs text-forex-muted">
@@ -290,7 +295,10 @@ function SupplierCard({ supplier }: { supplier: SupplierDto }) {
                     </p>
                   </div>
                 </div>
-                {(movement.totalCostXaf || movement.clientName || movement.receiptNumber || movement.note) && (
+                {(movement.totalCostXaf ||
+                  movement.clientName ||
+                  movement.receiptNumber ||
+                  movement.note) && (
                   <div className="mt-2 flex flex-wrap gap-2 text-xs text-forex-muted border-t border-white/5 pt-2">
                     {movement.totalCostXaf && (
                       <span>Cout: {movement.totalCostXaf?.toFixed(2)}</span>
@@ -330,9 +338,13 @@ function SupplierStat({
     <div className="rounded-xl lg:rounded-2xl border border-white/10 bg-white/[0.03] p-2 lg:p-3">
       <div className="flex items-center gap-2 text-forex-muted">
         <Icon className="h-3 w-3 lg:h-4 lg:w-4 flex-shrink-0" />
-        <span className="text-xs uppercase tracking-premium truncate">{label}</span>
+        <span className="text-xs uppercase tracking-premium truncate">
+          {label}
+        </span>
       </div>
-      <p className="mt-1 text-xs lg:text-sm font-semibold text-white truncate">{value}</p>
+      <p className="mt-1 text-xs lg:text-sm font-semibold text-white truncate">
+        {value}
+      </p>
     </div>
   );
 }
