@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function SignInForm() {
-  const [email, setEmail] = useState("admin@forexflow.pro");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,7 +50,13 @@ export function SignInForm() {
     <form className="space-y-5" onSubmit={handleSubmit}>
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        <Input
+          id="email"
+          type="email"
+          value={email}
+          placeholder="votre@email.com"
+          onChange={(event) => setEmail(event.target.value)}
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
@@ -58,6 +64,7 @@ export function SignInForm() {
           id="password"
           type="password"
           value={password}
+          placeholder="Votre mot de passe"
           onChange={(event) => setPassword(event.target.value)}
         />
       </div>

@@ -5,8 +5,20 @@ import { subDays, subHours } from "date-fns";
 const prisma = new PrismaClient();
 
 const currencies = [
-  { code: "USD", name: "United States Dollar", flagCode: "us", buyRate: new Prisma.Decimal(600), sellRate: new Prisma.Decimal(615) },
-  { code: "EUR", name: "Euro", flagCode: "eu", buyRate: new Prisma.Decimal(655), sellRate: new Prisma.Decimal(670) }
+  {
+    code: "USD",
+    name: "United States Dollar",
+    flagCode: "us",
+    buyRate: new Prisma.Decimal(600),
+    sellRate: new Prisma.Decimal(615),
+  },
+  {
+    code: "EUR",
+    name: "Euro",
+    flagCode: "eu",
+    buyRate: new Prisma.Decimal(655),
+    sellRate: new Prisma.Decimal(670),
+  },
 ];
 
 async function main() {
@@ -17,7 +29,7 @@ async function main() {
 
   const [adminPassword, agentPassword] = await Promise.all([
     bcrypt.hash("admin123", 10),
-    bcrypt.hash("agent123", 10)
+    bcrypt.hash("agent123", 10),
   ]);
 
   const admin = await prisma.user.create({
@@ -25,8 +37,8 @@ async function main() {
       name: "Amina Njoya",
       email: "admin@forexflow.pro",
       passwordHash: adminPassword,
-      role: Role.ADMIN
-    }
+      role: Role.ADMIN,
+    },
   });
 
   const agent = await prisma.user.create({
@@ -34,12 +46,12 @@ async function main() {
       name: "Kevin Mbianda",
       email: "agent@forexflow.pro",
       passwordHash: agentPassword,
-      role: Role.AGENT
-    }
+      role: Role.AGENT,
+    },
   });
 
   await prisma.currency.createMany({
-    data: currencies
+    data: currencies,
   });
 
   await prisma.rateHistory.createMany({
@@ -51,7 +63,7 @@ async function main() {
         oldSellRate: new Prisma.Decimal(612),
         newSellRate: new Prisma.Decimal(615),
         changedById: admin.id,
-        changedAt: subHours(new Date(), 16)
+        changedAt: subHours(new Date(), 16),
       },
       {
         currencyCode: "EUR",
@@ -60,9 +72,9 @@ async function main() {
         oldSellRate: new Prisma.Decimal(666),
         newSellRate: new Prisma.Decimal(670),
         changedById: admin.id,
-        changedAt: subHours(new Date(), 12)
-      }
-    ]
+        changedAt: subHours(new Date(), 12),
+      },
+    ],
   });
 
   const records = Array.from({ length: 50 }).map((_, index) => {
@@ -71,13 +83,17 @@ async function main() {
     const amountGiven = new Prisma.Decimal(
       type === Type.BUY
         ? Number((80 + ((index * 37) % 720) + (index % 5) * 0.25).toFixed(2))
-        : Number((40000 + ((index * 12850) % 280000)).toFixed(2))
+        : Number((40000 + ((index * 12850) % 280000)).toFixed(2)),
     );
     const rateUsed = type === Type.BUY ? currency.buyRate : currency.sellRate;
     const amountReceived =
       type === Type.BUY
-        ? amountGiven.mul(rateUsed).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
-        : amountGiven.div(rateUsed).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+        ? amountGiven
+            .mul(rateUsed)
+            .toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
+        : amountGiven
+            .div(rateUsed)
+            .toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
 
     return {
       type,
@@ -87,12 +103,12 @@ async function main() {
       rateUsed,
       clientName: `Client ${index + 1}`,
       createdById: index % 3 === 0 ? admin.id : agent.id,
-      createdAt: subDays(new Date(), index % 30)
+      createdAt: subDays(new Date(), index % 30),
     };
   });
 
   await prisma.transaction.createMany({
-    data: records
+    data: records,
   });
 }
 
