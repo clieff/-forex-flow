@@ -163,7 +163,7 @@ function SupplierCard({ supplier }: { supplier: SupplierDto }) {
             </p>
           </div>
 
-            {supplier.positions.length > 0 ? (
+          {supplier.positions.length > 0 ? (
             <div className="grid gap-2 grid-cols-2 lg:grid-cols-3">
               {supplier.positions.map((position) => (
                 <div
@@ -273,7 +273,7 @@ function SupplierCard({ supplier }: { supplier: SupplierDto }) {
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-white text-sm whitespace-normal break-words">
-                      {movement.direction === "IN" ? "Entree" : "Sortie"} {" "}
+                      {movement.direction === "IN" ? "Entree" : "Sortie"}{" "}
                       {movement.currencyCode} · {movement.reason}
                     </p>
                     <p className="text-xs text-forex-muted">
