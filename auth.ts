@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import type { Role } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, getRequestIp } from "@/lib/rate-limit";
 import { createLog } from "@/lib/logs";
 
 const credentialsSchema = z.object({
@@ -40,11 +40,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
-        // Basic in-memory throttling (best-effort, avoids brute-force in single instance)
+      async authorize(credentials, request) {
+        // Throttle anti-brute-force, par email ET par IP (best-effort, persistant en base).
         const emailKey = typeof credentials?.email === "string" ? credentials.email.toLowerCase() : "unknown";
-        const rl = checkRateLimit({ key: `login:${emailKey}`, limit: 10, windowMs: 10 * 60_000 });
-        if (!rl.ok) {
+        const ip = request instanceof Request ? getRequestIp(request) : "unknown";
+
+        const [byEmail, byIp] = await Promise.all([
+          checkRateLimit({ key: `login:email:${emailKey}`, limit: 10, windowMs: 10 * 60_000 }),
+          checkRateLimit({ key: `login:ip:${ip}`, limit: 30, windowMs: 10 * 60_000 })
+        ]);
+
+        if (!byEmail.ok || !byIp.ok) {
           return null;
         }
 

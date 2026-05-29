@@ -22,7 +22,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const ip = getRequestIp(request);
-  const rl = checkRateLimit({ key: `rates:${ip}`, limit: 20, windowMs: 60_000 });
+  const rl = await checkRateLimit({ key: `rates:${ip}`, limit: 20, windowMs: 60_000 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

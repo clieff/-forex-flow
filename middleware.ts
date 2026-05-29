@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
-const adminOnlyPaths = ["/rates", "/logs", "/settings", "/stock", "/suppliers", "/caisse", "/rapports", "/api/rates", "/api/stock", "/api/suppliers", "/api/caisse", "/api/rapports", "/api/users"];
+const adminOnlyPaths = ["/rates", "/logs", "/settings", "/stock", "/suppliers", "/caisse", "/rapports", "/api/rates", "/api/stock", "/api/suppliers", "/api/caisse", "/api/rapports", "/api/users", "/api/transactions/export"];
 const protectedPrefixes = [
   "/",
   "/transactions",

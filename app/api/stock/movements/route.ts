@@ -8,7 +8,7 @@ import { updateCurrencyBuyRate } from "@/lib/pricing";
 
 export async function POST(request: Request) {
   const ip = getRequestIp(request);
-  const rl = checkRateLimit({ key: `stock:${ip}`, limit: 30, windowMs: 60_000 });
+  const rl = await checkRateLimit({ key: `stock:${ip}`, limit: 30, windowMs: 60_000 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

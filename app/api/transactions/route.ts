@@ -10,7 +10,7 @@ import { createLog } from "@/lib/logs";
 
 export async function POST(request: Request) {
   const ip = getRequestIp(request);
-  const rl = checkRateLimit({ key: `tx:${ip}`, limit: 30, windowMs: 60_000 });
+  const rl = await checkRateLimit({ key: `tx:${ip}`, limit: 30, windowMs: 60_000 });
   if (!rl.ok) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -59,6 +59,12 @@ export async function POST(request: Request) {
         rateUsed = fixedRate.sellRate;
       }
     }
+  }
+
+  // Taux manuel saisi par l'agent : prioritaire, pour que le taux enregistré
+  // corresponde exactement à l'aperçu affiché dans le formulaire.
+  if (parsed.data.customRate) {
+    rateUsed = new Prisma.Decimal(parsed.data.customRate).toDecimalPlaces(4, Prisma.Decimal.ROUND_HALF_UP);
   }
 
   const amountGiven = new Prisma.Decimal(parsed.data.amountGiven);

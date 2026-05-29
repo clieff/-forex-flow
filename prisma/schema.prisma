@@ -233,3 +233,13 @@ model ReceiptSequence {
 
   @@unique([year, month])
 }
+
+// ─── Rate limiting persistant (compatible serverless / multi-instance) ────────
+
+model RateLimit {
+  key     String   @id
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
+}
