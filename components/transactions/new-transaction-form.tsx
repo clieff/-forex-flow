@@ -14,12 +14,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { transactionSchema } from "@/lib/validation";
+import { PAYMENT_METHODS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ReceiptPreview } from "@/components/transactions/receipt-preview";
 import type { CurrencyDto } from "@/types/dto";
+import type { PaymentMethod } from "@prisma/client";
 
 type RegularClient = {
   id: string;
@@ -40,6 +42,8 @@ type TransactionFormValues = {
   supplierId?: string;
   isDebt?: boolean;
   customRate?: number | null;
+  paymentMethod?: PaymentMethod;
+  commissionXaf?: number | null;
 };
 
 export function NewTransactionForm({
@@ -67,6 +71,8 @@ export function NewTransactionForm({
       supplierId: "GENERAL",
       isDebt: false,
       customRate: null,
+      paymentMethod: "CASH",
+      commissionXaf: null,
     },
   });
 
@@ -161,10 +167,19 @@ export function NewTransactionForm({
   ]);
 
   async function onSubmit(payload: TransactionFormValues) {
+    // Clé d'idempotence générée par soumission : protège contre les doubles
+    // créations (double-clic, retry réseau) — le serveur renvoie la même
+    // transaction si la clé est rejouée.
+    const idempotencyKey =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
     const response = await fetch("/api/transactions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify({
         ...payload,
@@ -176,16 +191,23 @@ export function NewTransactionForm({
     });
 
     if (!response.ok) {
-      toast.error("Transaction refusee", {
-        description: "Verifier les valeurs puis recommencez.",
-      });
+      let description = "Vérifier les valeurs puis recommencez.";
+      try {
+        const errorBody = await response.json();
+        if (typeof errorBody?.error === "string") {
+          description = errorBody.error;
+        }
+      } catch {
+        // body non-JSON, on garde le message générique
+      }
+      toast.error("Transaction refusée", { description });
       return;
     }
 
     const data = (await response.json()) as { id: string };
     setTransactionId(data.id);
-    toast.success("Transaction enregistree", {
-      description: "Le recu PDF est deja pret au telechargement.",
+    toast.success("Transaction enregistrée", {
+      description: "Le reçu PDF est déjà prêt au téléchargement.",
       icon: <Sparkles className="h-4 w-4 animate-pulse text-forex-mint" />,
     });
     router.refresh();
@@ -318,6 +340,43 @@ export function NewTransactionForm({
                   className="h-12 rounded-2xl border-forex-border bg-white/5"
                 />
               )}
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Méthode de paiement</Label>
+              <Controller
+                control={form.control}
+                name="paymentMethod"
+                render={({ field }) => (
+                  <select
+                    {...field}
+                    className="flex h-12 w-full rounded-2xl border border-forex-border bg-white/5 px-4 text-sm text-forex-text outline-none"
+                  >
+                    {PAYMENT_METHODS.map((method) => (
+                      <option key={method.value} value={method.value}>
+                        {method.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center justify-between">
+                Commission (XAF)
+                <span className="text-xs text-forex-muted">Optionnel</span>
+              </Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0"
+                {...form.register("commissionXaf", { valueAsNumber: true })}
+                className="h-12 rounded-2xl border-forex-border bg-white/5"
+              />
             </div>
           </div>
 

@@ -1,6 +1,13 @@
 import React from "react";
 import { Document, Page, StyleSheet, Text, View, Image } from "@react-pdf/renderer";
-import type { Currency, Transaction, User, Client } from "@prisma/client";
+import type { Currency, Transaction, User, Client, PaymentMethod } from "@prisma/client";
+
+const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
+  CASH: "Espèces",
+  MOBILE_MONEY: "Mobile Money",
+  BANK_TRANSFER: "Virement",
+  BANK_DEPOSIT: "Dépôt bancaire"
+};
 
 const styles = StyleSheet.create({
   page: {
@@ -116,6 +123,16 @@ export function ReceiptDocument({
             <Text style={styles.label}>Rate Used</Text>
             <Text style={styles.value}>{Number(transaction.rateUsed).toFixed(2)} XAF</Text>
           </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Mode de paiement</Text>
+            <Text style={styles.value}>{PAYMENT_METHOD_LABEL[transaction.paymentMethod]}</Text>
+          </View>
+          {Number(transaction.commissionXaf) > 0 && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Commission</Text>
+              <Text style={styles.value}>{Number(transaction.commissionXaf).toFixed(2)} XAF</Text>
+            </View>
+          )}
           <View style={styles.row}>
             <Text style={styles.label}>Processed By</Text>
             <Text style={styles.value}>{transaction.createdBy.name}</Text>

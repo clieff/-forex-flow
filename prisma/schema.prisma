@@ -114,21 +114,25 @@ model ClientRate {
 }
 
 model Transaction {
-  id             String         @id @default(cuid())
-  receiptNumber  String?
-  type           Type
-  currencyCode   String
-  currency       Currency       @relation(fields: [currencyCode], references: [code])
-  amountGiven    Decimal        @db.Decimal(18, 2)
-  amountReceived Decimal        @db.Decimal(18, 2)
-  rateUsed       Decimal        @db.Decimal(18, 4)
-  clientName     String?
-  clientId       String?
-  client         Client?        @relation(fields: [clientId], references: [id])
-  createdBy      User           @relation("CreatedTransactions", fields: [createdById], references: [id])
-  createdById    String
-  createdAt      DateTime       @default(now())
-  stockMove      StockMovement?
+  id                String          @id @default(cuid())
+  receiptNumber     String?
+  type              Type
+  currencyCode      String
+  currency          Currency        @relation(fields: [currencyCode], references: [code])
+  amountGiven       Decimal         @db.Decimal(18, 2)
+  amountReceived    Decimal         @db.Decimal(18, 2)
+  rateUsed          Decimal         @db.Decimal(18, 4)
+  paymentMethod     PaymentMethod   @default(CASH)
+  commissionXaf     Decimal         @default(0) @db.Decimal(18, 2)
+  realizedMarginXaf Decimal         @default(0) @db.Decimal(18, 2)
+  clientName        String?
+  clientId          String?
+  client            Client?         @relation(fields: [clientId], references: [id])
+  createdBy         User            @relation("CreatedTransactions", fields: [createdById], references: [id])
+  createdById       String
+  createdAt         DateTime        @default(now())
+  stockMove         StockMovement?
+  idempotencyKey    IdempotencyKey?
 
   @@index([clientId, createdAt])
   @@index([currencyCode, createdAt])
@@ -137,6 +141,29 @@ model Transaction {
 enum Type {
   BUY
   SELL
+}
+
+enum PaymentMethod {
+  CASH
+  MOBILE_MONEY
+  BANK_TRANSFER
+  BANK_DEPOSIT
+}
+
+// ─── Idempotence des créations de transaction ─────────────────────────────────
+// Évite les doublons en cas de double-clic ou de retry réseau côté client.
+// Le client envoie un header Idempotency-Key (UUID) ; on lie ce key à la
+// transaction effectivement créée et on renvoie le même résultat aux retries.
+
+model IdempotencyKey {
+  key           String
+  userId        String
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  createdAt     DateTime    @default(now())
+
+  @@id([key, userId])
+  @@index([createdAt])
 }
 
 model Supplier {

@@ -1,4 +1,4 @@
-import type { Role, Type } from "@prisma/client";
+import type { PaymentMethod, Role, Type } from "@prisma/client";
 
 export const NAV_ITEMS: Array<{
   href: string;
@@ -23,3 +23,14 @@ export const TRANSACTION_TYPES: Array<{ label: string; value: Type }> = [
   { label: "Achat", value: "BUY" },
   { label: "Vente", value: "SELL" }
 ];
+
+export const PAYMENT_METHODS: Array<{ label: string; value: PaymentMethod }> = [
+  { label: "Espèces", value: "CASH" },
+  { label: "Mobile Money", value: "MOBILE_MONEY" },
+  { label: "Virement", value: "BANK_TRANSFER" },
+  { label: "Dépôt bancaire", value: "BANK_DEPOSIT" }
+];
+
+// Garde-fou anti-fraude : écart maximal autorisé entre le taux personnalisé
+// saisi par l'agent et le taux par défaut (devise ou taux fixe client).
+export const MAX_CUSTOM_RATE_DEVIATION = 0.05; // ±5 %
