@@ -11,6 +11,7 @@ import {
   History,
   LayoutDashboard,
   List,
+  LogOut,
   Plus,
   Settings,
   Truck,
@@ -19,6 +20,7 @@ import {
   Menu,
   X
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 import type { Role } from "@prisma/client";
 import { NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -125,6 +127,22 @@ export function MobileNav({ role }: { role: Role }) {
                 </Link>
               );
             })}
+          </div>
+
+          <div className="mt-6 border-t border-white/10 pt-6">
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                signOut({ callbackUrl: "/sign-in" });
+              }}
+              className="flex w-full items-center justify-between rounded-2xl border border-forex-danger/30 bg-forex-danger/5 p-4 text-white transition hover:bg-forex-danger/10 active:bg-forex-danger/15"
+            >
+              <span className="flex items-center gap-3">
+                <LogOut className="h-5 w-5 text-forex-danger" />
+                <span className="font-medium">Se déconnecter</span>
+              </span>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
