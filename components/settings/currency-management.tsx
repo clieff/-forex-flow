@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, LoaderCircle, Globe } from "lucide-react";
+import { Plus, LoaderCircle, Globe, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ export function CurrencyManagement({ initialCurrencies }: { initialCurrencies: C
   const [currencies, setCurrencies] = useState<Currency[]>(initialCurrencies);
   const [isAdding, setIsAdding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingCode, setDeletingCode] = useState<string | null>(null);
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -60,7 +61,6 @@ export function CurrencyManagement({ initialCurrencies }: { initialCurrencies: C
       }
 
       const newCurrency = await res.json();
-      // Ensure numeric rates for display
       const formattedCurrency = {
         ...newCurrency,
         buyRate: Number(newCurrency.buyRate),
@@ -77,10 +77,35 @@ export function CurrencyManagement({ initialCurrencies }: { initialCurrencies: C
     }
   }
 
+  async function handleDeleteCurrency(code: string) {
+    if (!confirm(`Etes-vous sur de vouloir supprimer la devise ${code} ? Cette action est irreversible si aucune transaction n'est liee.`)) {
+      return;
+    }
+
+    setDeletingCode(code);
+    try {
+      const res = await fetch(`/api/currencies?code=${code}`, {
+        method: "DELETE"
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        toast.error("Suppression impossible", { description: error.error || "Erreur lors de la suppression." });
+        return;
+      }
+
+      setCurrencies(currencies.filter((c) => c.code !== code));
+      toast.success("Devise supprimee", { description: `${code} a ete supprimee avec succes.` });
+      router.refresh();
+    } finally {
+      setDeletingCode(null);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="text-sm text-forex-muted">Configuration des monnaies acceptées au desk.</p>
+        <p className="text-sm text-forex-muted">Configuration des monnaies acceptees au desk.</p>
         <Button onClick={() => setIsAdding(!isAdding)} variant={isAdding ? "secondary" : "default"}>
           <Plus className="h-4 w-4 mr-2" />
           {isAdding ? "Annuler" : "Ajouter une devise"}
@@ -175,13 +200,14 @@ export function CurrencyManagement({ initialCurrencies }: { initialCurrencies: C
             <TableHead className="text-center">Drapeau</TableHead>
             <TableHead>Achat</TableHead>
             <TableHead>Vente</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {currencies.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center py-12 text-forex-muted">
-                Aucune devise configurée.
+              <TableCell colSpan={5} className="text-center py-12 text-forex-muted">
+                Aucune devise configuree.
               </TableCell>
             </TableRow>
           ) : (
@@ -198,6 +224,21 @@ export function CurrencyManagement({ initialCurrencies }: { initialCurrencies: C
                 </TableCell>
                 <TableCell className="text-forex-mint font-mono font-semibold">{curr.buyRate.toFixed(2)} XAF</TableCell>
                 <TableCell className="text-forex-danger font-mono font-semibold">{curr.sellRate.toFixed(2)} XAF</TableCell>
+                <TableCell className="text-right">
+                  <button
+                    onClick={() => handleDeleteCurrency(curr.code)}
+                    disabled={deletingCode === curr.code}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-forex-danger/20 bg-forex-danger/5 px-3 py-1.5 text-xs font-medium text-forex-danger transition hover:bg-forex-danger/10 active:bg-forex-danger/15 disabled:opacity-50"
+                    title={`Supprimer ${curr.code}`}
+                  >
+                    {deletingCode === curr.code ? (
+                      <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
+                    <span className="hidden sm:inline">Supprimer</span>
+                  </button>
+                </TableCell>
               </TableRow>
             ))
           )}

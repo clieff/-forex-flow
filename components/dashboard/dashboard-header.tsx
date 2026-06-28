@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { Bell, ChevronRight, AlertTriangle, Search } from "lucide-react";
+import { Bell, ChevronRight, AlertTriangle, Search, LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
 import type { Role } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import type { StockAlert } from "@/lib/alerts";
@@ -156,6 +157,15 @@ export function DashboardHeader({
             )}
           </AnimatePresence>
         </div>
+
+        {/* Bouton Deconnexion - visible uniquement sur mobile */}
+        <button
+          onClick={() => signOut({ callbackUrl: "/sign-in" })}
+          className="flex md:hidden items-center justify-center rounded-xl border border-forex-danger/30 bg-forex-danger/5 p-2.5 text-forex-danger transition active:bg-forex-danger/10"
+          title="Se déconnecter"
+        >
+          <LogOut className="h-[18px] w-[18px]" />
+        </button>
 
         {/* User avatar - compact on mobile */}
         <div className="flex items-center gap-2 md:gap-3 rounded-[16px] md:rounded-[24px] border border-white/10 bg-white/[0.03] px-2 py-1.5 md:px-3 md:py-2">

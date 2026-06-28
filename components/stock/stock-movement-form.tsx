@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, Calculator } from "lucide-react";
+import { AlertCircle, Calculator, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ export function StockMovementForm({ onCreated }: { onCreated: () => void }) {
   const [loading, setLoading] = useState(false);
   const [useCalculator, setUseCalculator] = useState(true);
   const [manualReceived, setManualReceived] = useState(false);
+  const [lastMoveId, setLastMoveId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     currencyCode: "",
@@ -109,7 +110,9 @@ export function StockMovementForm({ onCreated }: { onCreated: () => void }) {
       return;
     }
 
+    const result = await res.json();
     toast.success("Mouvement de stock enregistre");
+    setLastMoveId(result.moveId);
     setFormData((prev) => ({
       ...prev,
       amount: "",
@@ -123,13 +126,17 @@ export function StockMovementForm({ onCreated }: { onCreated: () => void }) {
     onCreated();
   }
 
+  function downloadInvoice(moveId: string) {
+    window.open(`/api/stock/movements/${moveId}/invoice`, "_blank");
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle>Nouvel approvisionnement / ajustement</CardTitle>
           <p className="mt-1 text-sm text-forex-muted">
-            Les achats fournisseurs mettent a jour le prix moyen d'achat de la devise a partir des couts reels saisis.
+            Les achats fournisseurs mettent a jour le prix moyen d&apos;achat de la devise a partir des couts reels saisis.
           </p>
         </div>
         <Button type="button" variant={useCalculator ? "secondary" : "ghost"} size="sm" onClick={() => setUseCalculator((value) => !value)}>
@@ -265,10 +272,21 @@ export function StockMovementForm({ onCreated }: { onCreated: () => void }) {
             </label>
           </div>
 
-          <div className="xl:col-span-3">
+          <div className="flex flex-wrap items-center gap-3 xl:col-span-3">
             <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
               {loading ? "Enregistrement..." : "Enregistrer le mouvement"}
             </Button>
+            {lastMoveId && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="gap-2"
+                onClick={() => downloadInvoice(lastMoveId)}
+              >
+                <FileText className="h-4 w-4" />
+                Telecharger la facture
+              </Button>
+            )}
           </div>
         </form>
       </CardContent>

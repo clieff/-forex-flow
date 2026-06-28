@@ -1,4 +1,5 @@
-import { ArrowUpRight, Coins, Landmark, WalletCards, Trophy } from "lucide-react";
+import { ArrowUpRight, Coins, Landmark, WalletCards, Trophy, Plus, Globe } from "lucide-react";
+import Link from "next/link";
 import { PageTransition } from "@/components/dashboard/page-transition";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
@@ -180,6 +181,29 @@ export default async function DashboardPage() {
             ))}
           </CardContent>
         </Card>
+      </section>
+
+      {/* Acces rapide - Gestion des devises */}
+      <section>
+        <Link href="/settings" className="group block">
+          <Card className="border-dashed border-white/15 bg-gradient-to-r from-white/[0.02] to-white/[0.05] transition-all duration-300 hover:border-forex-mint/30 hover:from-forex-mint/5 hover:to-forex-lagoon/5">
+            <CardContent className="flex items-center justify-between p-5 md:p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-forex-mint/10 text-forex-mint transition group-hover:bg-forex-mint/20">
+                  <Globe className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-white">Gestion des Devises</p>
+                  <p className="mt-1 text-sm text-forex-muted">Ajoutez, configurez ou supprimez les monnaies acceptees au bureau.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-forex-muted transition group-hover:border-forex-mint/30 group-hover:text-white">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Gerer</span>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </section>
 
       {/* Classement des agents */}

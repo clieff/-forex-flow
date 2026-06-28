@@ -8,6 +8,8 @@ import {
   Clock3,
   PlusCircle,
   TrendingUp,
+  FileText,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -270,13 +272,24 @@ function SupplierCard({ supplier }: { supplier: SupplierDto }) {
                         - {movement.createdBy}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-[#0B1627]/70 px-3 py-2 text-left sm:text-right">
-                      <p className="text-base font-semibold tabular-nums text-white">
-                        {movement.amount.toFixed(2)}
-                      </p>
-                      <p className="mt-1 text-sm tabular-nums text-forex-mint">
-                        {movement.unitPrice ? movement.unitPrice.toFixed(4) : "-"}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-2xl bg-[#0B1627]/70 px-3 py-2 text-left sm:text-right">
+                        <p className="text-base font-semibold tabular-nums text-white">
+                          {movement.amount.toFixed(2)}
+                        </p>
+                        <p className="mt-1 text-sm tabular-nums text-forex-mint">
+                          {movement.unitPrice ? movement.unitPrice.toFixed(4) : "-"}
+                        </p>
+                      </div>
+                      {(movement.reason === "SUPPLIER_PURCHASE" || movement.reason === "DEBT_SETTLEMENT") && (
+                        <button
+                          onClick={() => window.open(`/api/stock/movements/${movement.id}/invoice`, "_blank")}
+                          className="flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] p-2 text-forex-muted transition hover:text-white hover:bg-white/[0.08]"
+                          title="Telecharger la facture"
+                        >
+                          <Download className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
