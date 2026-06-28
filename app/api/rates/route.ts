@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { rateUpdateSchema } from "@/lib/validation";
 import { checkRateLimit, getRequestIp } from "@/lib/rate-limit";
@@ -8,8 +8,8 @@ import { Prisma } from "@prisma/client";
 import { createLog } from "@/lib/logs";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user) {
+  const { user } = await getServerSession();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -27,9 +27,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const session = await auth();
+  const { user } = await getServerSession();
 
-  if (!session?.user || session.user.role !== "ADMIN") {
+  if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
         newBuyRate: nextBuy,
         oldSellRate: existing.sellRate,
         newSellRate: nextSell,
-        changedById: session.user.id
+        changedById: user.id
       }
     })
   ]);
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     category: "RATE",
     action: "UPDATE_RATE",
     details: `${parsed.data.currencyCode}: Buy ${existing.buyRate}->${nextBuy}, Sell ${existing.sellRate}->${nextSell}`,
-    userId: session.user.id
+    userId: user.id
   });
 
   return NextResponse.json({ ok: true });

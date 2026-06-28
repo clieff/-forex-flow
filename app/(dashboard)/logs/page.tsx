@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Filter, History } from "lucide-react";
@@ -26,8 +26,8 @@ export default async function LogsPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const { user } = await getServerSession();
+  if (!user || user.role !== "ADMIN") {
     redirect("/");
   }
 

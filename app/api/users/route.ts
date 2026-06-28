@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -13,8 +13,8 @@ const createUserSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const { user: currentUser } = await getServerSession();
+  if (!currentUser || currentUser.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       category: "USER",
       action: "CREATE_USER",
       details: `Nouvel utilisateur: ${user.name} (${user.role})`,
-      userId: session.user.id
+      userId: currentUser.id
     });
 
     return NextResponse.json(user);

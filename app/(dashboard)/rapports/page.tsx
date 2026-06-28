@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { redirect } from "next/navigation";
 import { Download, FileText, CalendarDays } from "lucide-react";
 import Link from "next/link";
@@ -22,8 +22,8 @@ export default async function RapportsPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const { user } = await getServerSession();
+  if (!user || user.role !== "ADMIN") {
     redirect("/");
   }
 

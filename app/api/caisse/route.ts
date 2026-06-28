@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
@@ -14,8 +14,8 @@ const cashMovementSchema = z.object({
 });
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user) {
+  const { user } = await getServerSession();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -24,11 +24,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user) {
+  const { user } = await getServerSession();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (session.user.role !== "ADMIN") {
+  if (user.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       amount: parsed.data.amount,
       reason: parsed.data.reason,
       note: parsed.data.note || null,
-      createdById: session.user.id
+      createdById: user.id
     }
   });
 
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     category: "CASH",
     action: `CASH_${movement.direction}`,
     details: `${movement.amount} XAF - ${movement.reason}${movement.note ? ` (${movement.note})` : ""}`,
-    userId: session.user.id
+    userId: user.id
   });
 
   return NextResponse.json(movement);

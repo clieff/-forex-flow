@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { PageTransition } from "@/components/dashboard/page-transition";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,8 +9,8 @@ import { StockMovementFormWrapper } from "@/components/stock/stock-movement-form
 export const dynamic = "force-dynamic";
 
 export default async function StockPage() {
-  const session = await auth();
-  const isAdmin = session?.user.role === "ADMIN";
+  const { user } = await getServerSession();
+  const isAdmin = user?.role === "ADMIN";
   const balances = await getStockBalances();
 
   return (

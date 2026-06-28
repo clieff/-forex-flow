@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { createLog } from "@/lib/logs";
 import { currencySchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const { user } = await getServerSession();
+  if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       category: "RATE",
       action: "CREATE_CURRENCY",
       details: `Nouvelle devise ajoutee: ${currency.code} (${currency.name})`,
-      userId: session.user.id
+      userId: user.id
     });
 
     return NextResponse.json(currency);
@@ -64,8 +64,8 @@ export async function GET() {
 }
 
 export async function DELETE(request: Request) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const { user } = await getServerSession();
+  if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -112,7 +112,7 @@ export async function DELETE(request: Request) {
       category: "RATE",
       action: "DELETE_CURRENCY",
       details: `Devise supprimee: ${currency.code} (${currency.name})`,
-      userId: session.user.id
+      userId: user.id
     });
 
     return NextResponse.json({ success: true, deleted: currency.code });

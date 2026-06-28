@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { redirect } from "next/navigation";
 import { ArrowDownLeft, ArrowUpRight, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { PageTransition } from "@/components/dashboard/page-transition";
@@ -21,10 +21,10 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 export default async function CaissePage() {
-  const session = await auth();
-  if (!session?.user) redirect("/sign-in");
+  const { user } = await getServerSession();
+  if (!user) redirect("/sign-in");
 
-  const isAdmin = session.user.role === "ADMIN";
+  const isAdmin = user.role === "ADMIN";
   const data = await getCaisseData();
 
   // Graphique: adapter le format weeklyBuckets au VolumeChart

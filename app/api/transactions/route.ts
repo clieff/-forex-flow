@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { transactionSchema } from "@/lib/validation";
 import { checkRateLimit, getRequestIp } from "@/lib/rate-limit";
@@ -44,8 +44,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const session = await auth();
-  if (!session?.user) {
+  const { user } = await getServerSession();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
 
   // Court-circuit idempotence : on rejoue la même réponse pour une clé déjà vue.
   if (idemKey) {
-    const cached = await lookupIdempotent(idemKey, session.user.id);
+    const cached = await lookupIdempotent(idemKey, user.id);
     if (cached) {
       return NextResponse.json({ id: cached.id, receiptNumber: cached.receiptNumber });
     }
@@ -172,9 +172,9 @@ export async function POST(request: Request) {
             realizedMarginXaf,
             clientName: parsed.data.clientName || null,
             clientId: parsed.data.clientId || null,
-            createdById: session.user.id,
+            createdById: user.id,
             ...(idemKey
-              ? { idempotencyKey: { create: { key: idemKey, userId: session.user.id } } }
+              ? { idempotencyKey: { create: { key: idemKey, userId: user.id } } }
               : {})
           }
         });
@@ -187,7 +187,7 @@ export async function POST(request: Request) {
             reason: parsed.data.isDebt ? "DEBT_SETTLEMENT" : "TRANSACTION",
             transactionId: createdTx.id,
             supplierId,
-            createdById: session.user.id
+            createdById: user.id
           }
         });
 
@@ -225,7 +225,7 @@ export async function POST(request: Request) {
     if (e instanceof Prisma.PrismaClientKnownRequestError) {
       // Collision sur Idempotency-Key : un retry parallèle a déjà créé la transaction.
       if (e.code === "P2002" && idemKey) {
-        const cached = await lookupIdempotent(idemKey, session.user.id);
+        const cached = await lookupIdempotent(idemKey, user.id);
         if (cached) {
           return NextResponse.json({ id: cached.id, receiptNumber: cached.receiptNumber });
         }
@@ -243,7 +243,7 @@ export async function POST(request: Request) {
             retry.code === "P2002" &&
             idemKey
           ) {
-            const cached = await lookupIdempotent(idemKey, session.user.id);
+            const cached = await lookupIdempotent(idemKey, user.id);
             if (cached) {
               return NextResponse.json({ id: cached.id, receiptNumber: cached.receiptNumber });
             }
@@ -266,7 +266,7 @@ export async function POST(request: Request) {
     category: "TRANSACTION",
     action: `CREATE_${transaction.type}`,
     details: `${transaction.amountGiven} ${transaction.currencyCode} -> ${transaction.amountReceived} XAF (Réf: ${transaction.receiptNumber})`,
-    userId: session.user.id
+    userId: user.id
   });
 
   return NextResponse.json({ id: transaction.id, receiptNumber: transaction.receiptNumber });

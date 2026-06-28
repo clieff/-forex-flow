@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRequestIp } from "@/lib/rate-limit";
 import { createLog } from "@/lib/logs";
@@ -13,8 +13,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const { user } = await getServerSession();
+  if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
         reason: body.isDebt ? "DEBT_SETTLEMENT" : reason,
         note: body.note?.trim() || null,
         supplierId,
-        createdById: session.user.id
+        createdById: user.id
       }
     });
 
@@ -159,7 +159,7 @@ export async function POST(request: Request) {
       `${move.amount} ${move.currencyCode} - ${move.reason}` +
       (move.unitPrice ? ` @ ${move.unitPrice} XAF` : "") +
       (move.note ? ` (${move.note})` : ""),
-    userId: session.user.id
+    userId: user.id
   });
 
   return NextResponse.json({ moveId: move.id });

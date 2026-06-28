@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { PageTransition } from "@/components/dashboard/page-transition";
 import { RatesGrid } from "@/components/rates/rates-grid";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +9,9 @@ import { toNumber } from "@/lib/decimal";
 export const dynamic = "force-dynamic";
 
 export default async function RatesPage() {
-  const session = await auth();
+  const { user } = await getServerSession();
   const data = await getRateManagementData();
-  const editable = session?.user.role === "ADMIN";
+  const editable = user?.role === "ADMIN";
 
   return (
     <PageTransition className="space-y-4 md:space-y-6">

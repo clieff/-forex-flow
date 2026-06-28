@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { redirect } from "next/navigation";
 import { PageTransition } from "@/components/dashboard/page-transition";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +11,8 @@ import { CurrencyManagement } from "@/components/settings/currency-management";
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const { user } = await getServerSession();
+  if (!user || user.role !== "ADMIN") {
     redirect("/");
   }
 
@@ -61,7 +61,7 @@ export default async function SettingsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <UsersManagement initialUsers={users} currentUserId={session.user.id} />
+              <UsersManagement initialUsers={users} currentUserId={user.id} />
             </CardContent>
           </Card>
 

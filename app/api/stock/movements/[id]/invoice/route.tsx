@@ -1,6 +1,6 @@
 import React from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { SupplierInvoiceDocument } from "@/components/pdf/supplier-invoice-document";
 import QRCode from "qrcode";
@@ -11,9 +11,9 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
+  const { user } = await getServerSession();
 
-  if (!session?.user) {
+  if (!user) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -38,8 +38,8 @@ export async function GET(
     return new Response("Not a supplier purchase", { status: 400 });
   }
 
-  const isAdmin = session.user.role === "ADMIN";
-  const isOwner = move.createdById === session.user.id;
+  const isAdmin = user.role === "ADMIN";
+  const isOwner = move.createdById === user.id;
   if (!isAdmin && !isOwner) {
     return new Response("Forbidden", { status: 403 });
   }

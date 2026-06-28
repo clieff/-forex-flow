@@ -1,6 +1,6 @@
 import React from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { getTransactionById } from "@/lib/dashboard";
 import { ReceiptDocument } from "@/components/pdf/receipt-document";
 import QRCode from "qrcode";
@@ -11,9 +11,9 @@ export async function GET(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await auth();
+  const { user } = await getServerSession();
 
-  if (!session?.user) {
+  if (!user) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -23,8 +23,8 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
 
-  const isAdmin = session.user.role === "ADMIN";
-  const isOwner = transaction.createdById === session.user.id;
+  const isAdmin = user.role === "ADMIN";
+  const isOwner = transaction.createdById === user.id;
   if (!isAdmin && !isOwner) {
     return new Response("Forbidden", { status: 403 });
   }

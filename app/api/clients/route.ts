@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { getClientsOverview } from "@/lib/clients";
 import { clientSchema } from "@/lib/validation";
 import { createLog } from "@/lib/logs";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user) {
+  const { user } = await getServerSession();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -16,8 +16,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const { user } = await getServerSession();
+  if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       category: "USER",
       action: "CREATE_CLIENT",
       details: `Nouveau client: ${client.name}`,
-      userId: session.user.id
+      userId: user.id
     });
 
     return NextResponse.json(client);

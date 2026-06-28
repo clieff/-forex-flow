@@ -9,8 +9,10 @@ const adminOnlyPaths = [
 const protectedPrefixes = [
   "/",
   "/transactions", "/caisse", "/rapports", "/rates", "/logs", "/settings",
+  "/clients", "/suppliers", "/stock",
   "/api/rates", "/api/transactions", "/api/transaction", "/api/caisse",
-  "/api/rapports", "/api/users", "/api/search", "/api/notifications", "/api/settings"
+  "/api/rapports", "/api/users", "/api/search", "/api/notifications", "/api/settings",
+  "/api/clients", "/api/suppliers", "/api/currencies", "/api/stock", "/api/cash"
 ];
 
 export async function middleware(req: NextRequest) {
@@ -20,11 +22,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET || "forexflow-dev-secret-key-change-in-production-abc123xyz",
-    salt: process.env.NODE_ENV === "production" ? "__Secure-authjs.session-token" : "authjs.session-token"
-  });
+  const secret = process.env.AUTH_SECRET || "forexflow-dev-secret-key-change-in-production-abc123xyz";
+
+  // Essayer d'abord le cookie standard, puis le __Secure en production
+  let token = await getToken({ req, secret, salt: "authjs.session-token" });
+  if (!token) {
+    token = await getToken({ req, secret, salt: "__Secure-authjs.session-token" });
+  }
 
   const isProtected = protectedPrefixes.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)

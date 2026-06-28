@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { PageTransition } from "@/components/dashboard/page-transition";
 import { NewTransactionForm } from "@/components/transactions/new-transaction-form";
 import { Badge } from "@/components/ui/badge";
@@ -10,8 +10,8 @@ import { toNumber } from "@/lib/decimal";
 export const dynamic = "force-dynamic";
 
 export default async function NewTransactionPage() {
-  const session = await auth();
-  const data = await getTransactionFormData(session?.user.role ?? "AGENT");
+  const { user } = await getServerSession();
+  const data = await getTransactionFormData(user?.role ?? "AGENT");
 
   return (
     <PageTransition className="space-y-4 md:space-y-6">

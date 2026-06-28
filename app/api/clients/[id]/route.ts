@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { getClientsOverview } from "@/lib/clients";
 import { createLog } from "@/lib/logs";
@@ -11,8 +11,8 @@ const updateClientSchema = z.object({
 });
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
-  const session = await auth();
-  if (!session?.user) {
+  const { user } = await getServerSession();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -27,8 +27,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const { user } = await getServerSession();
+  if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -56,7 +56,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     category: "USER",
     action: "UPDATE_CLIENT",
     details: `Client mis a jour: ${client.name}`,
-    userId: session.user.id
+    userId: user.id
   });
 
   return NextResponse.json({ client });

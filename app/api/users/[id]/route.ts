@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { createLog } from "@/lib/logs";
@@ -10,13 +10,13 @@ const updateUserSchema = z.object({
 });
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  const { user: currentUser } = await getServerSession();
+  if (!currentUser || currentUser.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Empêcher l'admin de se désactiver lui-même
-  if (params.id === session.user.id) {
+  if (params.id === currentUser.id) {
     return NextResponse.json({ error: "Vous ne pouvez pas modifier votre propre compte." }, { status: 400 });
   }
 
@@ -38,7 +38,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       category: "USER",
       action: "UPDATE_USER",
       details: `Mise à jour utilisateur: ${user.name} (Active: ${user.isActive}, Role: ${user.role})`,
-      userId: session.user.id
+      userId: currentUser.id
     });
 
     return NextResponse.json(user);

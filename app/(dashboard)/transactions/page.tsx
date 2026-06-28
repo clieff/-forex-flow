@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getServerSession } from "@/lib/auth-session";
 import { redirect } from "next/navigation";
 import { Filter, Download, Receipt } from "lucide-react";
 import Link from "next/link";
@@ -31,8 +31,8 @@ export default async function TransactionsPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const session = await auth();
-  if (!session?.user) redirect("/sign-in");
+  const { user } = await getServerSession();
+  if (!user) redirect("/sign-in");
 
   const page = Math.max(1, Number(searchParams.page ?? "1"));
   const type = (searchParams.type === "BUY" || searchParams.type === "SELL" ? searchParams.type : undefined) as Type | undefined;
