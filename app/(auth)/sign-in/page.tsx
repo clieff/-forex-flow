@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { SignInForm } from "@/components/auth/sign-in-form";
+import { Suspense } from "react";
 
 export default async function SignInPage() {
   const session = await auth();
@@ -18,7 +19,9 @@ export default async function SignInPage() {
             <p className="text-sm uppercase tracking-premium text-forex-muted">Secure Access</p>
             <h2 className="text-3xl font-semibold text-white">Connexion equipe</h2>
           </div>
-          <SignInForm />
+          <Suspense fallback={<div className="h-40 flex items-center justify-center text-white">Chargement...</div>}>
+            <SignInForm />
+          </Suspense>
         </section>
       </div>
     </main>

@@ -43,7 +43,6 @@ export function SignInForm() {
       icon: <Sparkles className="h-4 w-4 animate-pulse text-forex-mint" />
     });
     router.push(callbackUrl as any);
-    router.refresh();
   }
 
   return (
