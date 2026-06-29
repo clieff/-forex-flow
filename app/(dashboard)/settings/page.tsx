@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
   const { user } = await getServerSession();
   if (!user || user.role !== "ADMIN") {
-    redirect("/");
+    redirect("/access-denied?from=/settings");
   }
 
   const users = await prisma.user.findMany({

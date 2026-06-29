@@ -24,7 +24,7 @@ export default async function RapportsPage({
 }) {
   const { user } = await getServerSession();
   if (!user || user.role !== "ADMIN") {
-    redirect("/");
+    redirect("/access-denied?from=/rapports");
   }
 
   const dateStr = searchParams.date;

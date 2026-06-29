@@ -9,7 +9,7 @@ export default async function ClientsPage() {
   const { user } = await getServerSession();
   
   if (!user || user.role !== "ADMIN") {
-    redirect("/");
+    redirect("/access-denied?from=/clients");
   }
 
   return (

@@ -39,7 +39,9 @@ export default auth((req) => {
   );
 
   if (isAdminOnly && token?.user?.role !== "ADMIN") {
-    return Response.redirect(new URL("/", req.nextUrl.origin));
+    const deniedUrl = new URL("/access-denied", req.nextUrl.origin);
+    deniedUrl.searchParams.set("from", pathname);
+    return Response.redirect(deniedUrl);
   }
 });
 

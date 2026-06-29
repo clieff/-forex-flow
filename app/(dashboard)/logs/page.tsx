@@ -28,7 +28,7 @@ export default async function LogsPage({
 }) {
   const { user } = await getServerSession();
   if (!user || user.role !== "ADMIN") {
-    redirect("/");
+    redirect("/access-denied?from=/logs");
   }
 
   const page = Math.max(1, Number(searchParams.page ?? "1"));
