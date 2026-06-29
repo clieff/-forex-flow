@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import NextAuth from "next-auth";
+import { authConfig } from "./auth.config";
+
+const { auth } = NextAuth(authConfig);
 
 const adminOnlyPaths = [
   "/rates", "/logs", "/settings", "/stock", "/suppliers", "/caisse", "/rapports",
@@ -15,23 +16,12 @@ const protectedPrefixes = [
   "/api/clients", "/api/suppliers", "/api/currencies", "/api/stock", "/api/cash"
 ];
 
-export async function middleware(req: NextRequest) {
+export default auth((req) => {
   const { pathname } = req.nextUrl;
+  const token = req.auth; // contient la session (JWT déchiffré)
 
   if (pathname.startsWith("/sign-in") || pathname.startsWith("/_next") || pathname === "/favicon.ico") {
-    return NextResponse.next();
-  }
-
-  const secret = process.env.AUTH_SECRET || "forexflow-dev-secret-key-change-in-production-abc123xyz";
-
-  // Le cookie de session peut porter deux noms selon l'environnement :
-  //  - "authjs.session-token" en développement (HTTP)
-  //  - "__Secure-authjs.session-token" en production (HTTPS, comme sur Vercel)
-  // On tente les deux salts sur le vrai NextRequest pour récupérer le token
-  // de façon fiable quel que soit l'environnement.
-  let token = await getToken({ req, secret, salt: "authjs.session-token" });
-  if (!token) {
-    token = await getToken({ req, secret, salt: "__Secure-authjs.session-token" });
+    return;
   }
 
   const isProtected = protectedPrefixes.some(
@@ -41,19 +31,17 @@ export async function middleware(req: NextRequest) {
   if (isProtected && !token) {
     const signInUrl = new URL("/sign-in", req.nextUrl.origin);
     signInUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(signInUrl);
+    return Response.redirect(signInUrl);
   }
 
   const isAdminOnly = adminOnlyPaths.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 
-  if (isAdminOnly && token?.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/", req.nextUrl.origin));
+  if (isAdminOnly && token?.user?.role !== "ADMIN") {
+    return Response.redirect(new URL("/", req.nextUrl.origin));
   }
-
-  return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"]
