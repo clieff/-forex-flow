@@ -9,6 +9,7 @@ import { CaissePanel } from "@/components/caisse/caisse-panel";
 import { getCaisseData } from "@/lib/caisse";
 import { formatMoney } from "@/lib/formatters";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
+import { isAdminRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export default async function CaissePage() {
   const { user } = await getServerSession();
   if (!user) redirect("/sign-in");
 
-  const isAdmin = user.role === "ADMIN";
+  const isAdmin = isAdminRole(user.role);
   const data = await getCaisseData();
 
   // Graphique: adapter le format weeklyBuckets au VolumeChart

@@ -7,12 +7,13 @@ import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/decimal";
 import { UsersManagement } from "@/components/settings/users-management";
 import { CurrencyManagement } from "@/components/settings/currency-management";
+import { isAdminRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     redirect("/access-denied?from=/settings");
   }
 

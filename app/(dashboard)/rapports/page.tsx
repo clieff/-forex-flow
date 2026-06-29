@@ -10,6 +10,7 @@ import { toNumber } from "@/lib/decimal";
 import { startOfDay, endOfDay } from "date-fns";
 import { formatMoney } from "@/lib/formatters";
 import { DatePickerForm } from "@/components/rapports/date-picker-form";
+import { isAdminRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function RapportsPage({
   searchParams: SearchParams;
 }) {
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     redirect("/access-denied?from=/rapports");
   }
 

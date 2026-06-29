@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
+import { isAdminRole } from "./lib/roles";
 
 const { auth } = NextAuth(authConfig);
 
@@ -40,7 +41,7 @@ export default auth((req) => {
 
   const role = session?.user?.role;
 
-  if (isAdminOnly && role !== "ADMIN") {
+  if (isAdminOnly && !isAdminRole(role)) {
     const deniedUrl = new URL("/access-denied", req.nextUrl.origin);
     deniedUrl.searchParams.set("from", pathname);
     return Response.redirect(deniedUrl);

@@ -10,6 +10,7 @@ import { getLogs } from "@/lib/logs";
 import { LogFilters } from "@/components/logs/log-filters";
 import { LogCategory } from "@prisma/client";
 import { SyncLogsButton } from "@/components/logs/sync-logs-button";
+import { isAdminRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default async function LogsPage({
   searchParams: SearchParams;
 }) {
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     redirect("/access-denied?from=/logs");
   }
 
