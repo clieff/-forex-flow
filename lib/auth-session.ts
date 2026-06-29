@@ -1,24 +1,16 @@
-import { headers } from "next/headers";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/auth";
 import type { Role } from "@prisma/client";
 
-const secret = process.env.AUTH_SECRET || "forexflow-dev-secret-key-change-in-production-abc123xyz";
-
-function parseCookies(cookieHeader: string): Record<string, string> {
-  const cookies: Record<string, string> = {};
-  if (!cookieHeader) return cookies;
-  cookieHeader.split(";").forEach((pair) => {
-    const [key, ...val] = pair.trim().split("=");
-    if (key) cookies[key] = val.join("=");
-  });
-  return cookies;
-}
-
 /**
- * Replacement for auth() from NextAuth v5.
- * Uses getToken() directly to avoid the bcryptjs import crash in Node.js v24+.
- * Tries both cookie salt variants (standard and __Secure- prefix) for compatibility
- * with both direct and proxied environments.
+ * Wrapper server-side autour de auth() de NextAuth v5.
+ *
+ * Conserve la même interface que la version précédente
+ * ({ user: {...} | null }) afin que toutes les routes API qui
+ * l'utilisent restent compatibles, mais s'appuie sur auth()
+ * qui est la méthode officielle et stable de NextAuth.
+ *
+ * auth() lit le cookie de session via headers()/cookies() de Next.js
+ * de façon fiable, en production comme en développement.
  */
 export async function getServerSession(): Promise<{
   user: {
@@ -28,25 +20,18 @@ export async function getServerSession(): Promise<{
     role: Role;
   } | null;
 }> {
-  const req = await headers();
-  const cookieHeader = req.get("cookie") ?? "";
-  const reqLike = { headers: { cookie: cookieHeader }, cookies: parseCookies(cookieHeader) } as any;
+  const session = await auth();
 
-  let token = await getToken({ req: reqLike, secret, salt: "authjs.session-token" });
-  if (!token) {
-    token = await getToken({ req: reqLike, secret, salt: "__Secure-authjs.session-token" });
-  }
-
-  if (!token?.id) {
+  if (!session?.user) {
     return { user: null };
   }
 
   return {
     user: {
-      id: token.id as string,
-      email: (token.email as string) ?? null,
-      name: (token.name as string) ?? null,
-      role: (token.role as Role) ?? "AGENT"
+      id: session.user.id,
+      email: session.user.email ?? null,
+      name: session.user.name ?? null,
+      role: session.user.role
     }
   };
 }

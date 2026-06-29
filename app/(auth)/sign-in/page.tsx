@@ -1,42 +1,11 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/auth";
 import { SignInForm } from "@/components/auth/sign-in-form";
 
-const secret = process.env.AUTH_SECRET || "forexflow-dev-secret-key-change-in-production-abc123xyz";
-
-async function getSession() {
-  const req = await headers();
-  const cookieHeader = req.get("cookie") ?? "";
-  let token = await getToken({
-    req: { headers: { cookie: cookieHeader }, cookies: parseCookies(cookieHeader) } as any,
-    secret,
-    salt: "authjs.session-token"
-  });
-  if (!token) {
-    token = await getToken({
-      req: { headers: { cookie: cookieHeader }, cookies: parseCookies(cookieHeader) } as any,
-      secret,
-      salt: "__Secure-authjs.session-token"
-    });
-  }
-  return token;
-}
-
-function parseCookies(cookieHeader: string): Record<string, string> {
-  const cookies: Record<string, string> = {};
-  if (!cookieHeader) return cookies;
-  cookieHeader.split(";").forEach((pair) => {
-    const [key, ...val] = pair.trim().split("=");
-    if (key) cookies[key] = val.join("=");
-  });
-  return cookies;
-}
-
 export default async function SignInPage() {
-  const token = await getSession();
+  const session = await auth();
 
-  if (token?.id) {
+  if (session?.user) {
     redirect("/");
   }
 

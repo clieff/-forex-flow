@@ -22,13 +22,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const secret = process.env.AUTH_SECRET || "forexflow-dev-secret-key-change-in-production-abc123xyz";
-
-  // Essayer d'abord le cookie standard, puis le __Secure en production
-  let token = await getToken({ req, secret, salt: "authjs.session-token" });
-  if (!token) {
-    token = await getToken({ req, secret, salt: "__Secure-authjs.session-token" });
-  }
+  const token = await getToken({
+    req,
+    secret: process.env.AUTH_SECRET || "forexflow-dev-secret-key-change-in-production-abc123xyz",
+    // En production (HTTPS), NextAuth utilise le cookie préfixé __Secure-,
+    // sinon le cookie standard authjs.session-token. getToken gère ce choix
+    // automatiquement lorsqu'on ne force pas le salt.
+    salt: process.env.NODE_ENV === "production" ? "__Secure-authjs.session-token" : "authjs.session-token"
+  });
 
   const isProtected = protectedPrefixes.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
