@@ -18,7 +18,7 @@ const protectedPrefixes = [
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
-  const token = req.auth; // contient la session (JWT déchiffré)
+  const session = req.auth; // contient la session déchiffrée
 
   if (pathname.startsWith("/sign-in") || pathname.startsWith("/_next") || pathname === "/favicon.ico") {
     return;
@@ -28,7 +28,7 @@ export default auth((req) => {
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 
-  if (isProtected && !token) {
+  if (isProtected && !session) {
     const signInUrl = new URL("/sign-in", req.nextUrl.origin);
     signInUrl.searchParams.set("callbackUrl", pathname);
     return Response.redirect(signInUrl);
@@ -38,7 +38,9 @@ export default auth((req) => {
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 
-  if (isAdminOnly && token?.user?.role !== "ADMIN") {
+  const role = session?.user?.role;
+
+  if (isAdminOnly && role !== "ADMIN") {
     const deniedUrl = new URL("/access-denied", req.nextUrl.origin);
     deniedUrl.searchParams.set("from", pathname);
     return Response.redirect(deniedUrl);
