@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-session";
 import { reconstructLogs } from "@/lib/logs";
+import { isAdminRole } from "@/lib/roles";
 
 export async function POST() {
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

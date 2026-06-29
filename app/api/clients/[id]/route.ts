@@ -4,6 +4,7 @@ import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { getClientsOverview } from "@/lib/clients";
 import { createLog } from "@/lib/logs";
+import { isAdminRole } from "@/lib/roles";
 
 const updateClientSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
@@ -28,7 +29,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

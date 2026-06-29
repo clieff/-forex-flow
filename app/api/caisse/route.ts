@@ -5,6 +5,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getCaisseData } from "@/lib/caisse";
 import { createLog } from "@/lib/logs";
+import { isAdminRole } from "@/lib/roles";
 
 const cashMovementSchema = z.object({
   direction: z.enum(["IN", "OUT"]),
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (user.role !== "ADMIN") {
+  if (!isAdminRole(user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

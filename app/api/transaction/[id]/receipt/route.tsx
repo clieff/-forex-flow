@@ -4,6 +4,7 @@ import { getServerSession } from "@/lib/auth-session";
 import { getTransactionById } from "@/lib/dashboard";
 import { ReceiptDocument } from "@/components/pdf/receipt-document";
 import QRCode from "qrcode";
+import { isAdminRole } from "@/lib/roles";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,7 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
 
-  const isAdmin = user.role === "ADMIN";
+  const isAdmin = isAdminRole(user.role);
   const isOwner = transaction.createdById === user.id;
   if (!isAdmin && !isOwner) {
     return new Response("Forbidden", { status: 403 });

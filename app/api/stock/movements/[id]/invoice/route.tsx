@@ -4,6 +4,7 @@ import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { SupplierInvoiceDocument } from "@/components/pdf/supplier-invoice-document";
 import QRCode from "qrcode";
+import { isAdminRole } from "@/lib/roles";
 
 export const runtime = "nodejs";
 
@@ -38,7 +39,7 @@ export async function GET(
     return new Response("Not a supplier purchase", { status: 400 });
   }
 
-  const isAdmin = user.role === "ADMIN";
+  const isAdmin = isAdminRole(user.role);
   const isOwner = move.createdById === user.id;
   if (!isAdmin && !isOwner) {
     return new Response("Forbidden", { status: 403 });

@@ -3,10 +3,11 @@ import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { createLog } from "@/lib/logs";
 import { currencySchema } from "@/lib/validation";
+import { isAdminRole } from "@/lib/roles";
 
 export async function POST(request: Request) {
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -65,7 +66,7 @@ export async function GET() {
 
 export async function DELETE(request: Request) {
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

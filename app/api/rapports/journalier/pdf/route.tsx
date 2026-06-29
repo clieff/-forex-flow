@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-session";
 import { renderToStream } from "@react-pdf/renderer";
 import { DailyReportDocument } from "@/components/pdf/daily-report-document";
+import { isAdminRole } from "@/lib/roles";
 
 export async function GET(request: Request) {
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

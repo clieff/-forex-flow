@@ -3,6 +3,7 @@ import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { createLog } from "@/lib/logs";
+import { isAdminRole } from "@/lib/roles";
 
 const updateUserSchema = z.object({
   isActive: z.boolean().optional(),
@@ -11,7 +12,7 @@ const updateUserSchema = z.object({
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const { user: currentUser } = await getServerSession();
-  if (!currentUser || currentUser.role !== "ADMIN") {
+  if (!currentUser || !isAdminRole(currentUser.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

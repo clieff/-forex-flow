@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { createLog } from "@/lib/logs";
+import { isAdminRole } from "@/lib/roles";
 
 const createUserSchema = z.object({
   name: z.string().min(2),
@@ -14,7 +15,7 @@ const createUserSchema = z.object({
 
 export async function POST(request: Request) {
   const { user: currentUser } = await getServerSession();
-  if (!currentUser || currentUser.role !== "ADMIN") {
+  if (!currentUser || !isAdminRole(currentUser.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getClientsOverview } from "@/lib/clients";
 import { clientSchema } from "@/lib/validation";
 import { createLog } from "@/lib/logs";
+import { isAdminRole } from "@/lib/roles";
 
 export async function GET() {
   const { user } = await getServerSession();
@@ -17,7 +18,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

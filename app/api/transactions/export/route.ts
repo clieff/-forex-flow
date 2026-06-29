@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/decimal";
+import { isAdminRole } from "@/lib/roles";
 
 export async function GET(request: Request) {
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

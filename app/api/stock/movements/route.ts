@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRequestIp } from "@/lib/rate-limit";
 import { createLog } from "@/lib/logs";
 import { updateCurrencyBuyRate } from "@/lib/pricing";
+import { isAdminRole } from "@/lib/roles";
 
 export async function POST(request: Request) {
   const ip = getRequestIp(request);
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
   }
 
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

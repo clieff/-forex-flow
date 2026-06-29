@@ -4,10 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { updateClientDebt } from "@/lib/debt";
 import { clientDebtAdjustmentSchema } from "@/lib/validation";
 import { createLog } from "@/lib/logs";
+import { isAdminRole } from "@/lib/roles";
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   const { user } = await getServerSession();
-  if (!user || user.role !== "ADMIN") {
+  if (!user || !isAdminRole(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
