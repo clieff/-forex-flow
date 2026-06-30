@@ -1,15 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { StockMovementForm } from "./stock-movement-form";
 
 export function StockMovementFormWrapper() {
-  const router = useRouter();
+  const [lastMove, setLastMove] = useState<any>(null);
 
   return (
     <StockMovementForm 
-      onCreated={() => {
-        router.refresh();
+      onCreated={(payload) => {
+        setLastMove(payload);
       }} 
     />
   );

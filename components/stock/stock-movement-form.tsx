@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, Calculator, FileText } from "lucide-react";
+import { AlertCircle, Calculator } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,14 +11,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 type Currency = { code: string; name: string };
 type Supplier = { id: string; name: string };
 
-export function StockMovementForm({ onCreated }: { onCreated: () => void }) {
+export function StockMovementForm({
+  onCreated
+}: {
+  onCreated: (payload: {
+    moveId: string;
+    currencyCode: string;
+    direction: "IN" | "OUT";
+    amount: number;
+    unitPrice: number | null;
+    totalCostXaf: number | null;
+    supplierName: string | null;
+    note: string | null;
+    reason: string;
+    createdAt: string;
+  }) => void;
+}) {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(false);
   const [useCalculator, setUseCalculator] = useState(true);
   const [manualReceived, setManualReceived] = useState(false);
-  const [lastMoveId, setLastMoveId] = useState<string | null>(null);
-
   const [formData, setFormData] = useState({
     currencyCode: "",
     direction: "IN" as "IN" | "OUT",
@@ -112,7 +125,18 @@ export function StockMovementForm({ onCreated }: { onCreated: () => void }) {
 
     const result = await res.json();
     toast.success("Mouvement de stock enregistre");
-    setLastMoveId(result.moveId);
+    onCreated({
+      moveId: result.moveId,
+      currencyCode: formData.currencyCode,
+      direction: formData.direction,
+      amount: Number(formData.receivedAmount || formData.amount),
+      unitPrice: formData.unitPrice ? Number(formData.unitPrice) : null,
+      totalCostXaf: formData.totalCostXaf ? Number(formData.totalCostXaf) : null,
+      supplierName: suppliers.find((supplier) => supplier.id === formData.supplierId)?.name ?? null,
+      note: formData.note || null,
+      reason: formData.reason,
+      createdAt: new Date().toISOString()
+    });
     setFormData((prev) => ({
       ...prev,
       amount: "",
@@ -123,11 +147,6 @@ export function StockMovementForm({ onCreated }: { onCreated: () => void }) {
       isDebt: false
     }));
     setManualReceived(false);
-    onCreated();
-  }
-
-  function downloadInvoice(moveId: string) {
-    window.open(`/api/stock/movements/${moveId}/invoice`, "_blank");
   }
 
   return (
@@ -276,17 +295,6 @@ export function StockMovementForm({ onCreated }: { onCreated: () => void }) {
             <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
               {loading ? "Enregistrement..." : "Enregistrer le mouvement"}
             </Button>
-            {lastMoveId && (
-              <Button
-                type="button"
-                variant="secondary"
-                className="gap-2"
-                onClick={() => downloadInvoice(lastMoveId)}
-              >
-                <FileText className="h-4 w-4" />
-                Telecharger la facture
-              </Button>
-            )}
           </div>
         </form>
       </CardContent>
