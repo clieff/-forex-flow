@@ -8,6 +8,7 @@ import {
   BarChart3,
   Boxes,
   FileText,
+  Globe,
   History,
   LayoutDashboard,
   List,
@@ -36,7 +37,8 @@ const icons = {
   Users,
   Wallet,
   FileText,
-  List
+  List,
+  Globe
 };
 
 export function MobileNav({ role }: { role: Role }) {

@@ -4,7 +4,7 @@ export const NAV_ITEMS: Array<{
   href: string;
   label: string;
   role?: Role;
-  icon: "LayoutDashboard" | "ArrowLeftRight" | "History" | "BarChart3" | "Settings" | "Boxes" | "Truck" | "Users" | "Wallet" | "FileText" | "List";
+  icon: "LayoutDashboard" | "ArrowLeftRight" | "History" | "BarChart3" | "Settings" | "Boxes" | "Truck" | "Users" | "Wallet" | "FileText" | "List" | "Globe";
 }> = [
   { href: "/", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/transactions/new", label: "Transaction", icon: "ArrowLeftRight" },
@@ -14,6 +14,7 @@ export const NAV_ITEMS: Array<{
   { href: "/stock", label: "Stock", icon: "Boxes", role: "ADMIN" },
   { href: "/suppliers", label: "Fournisseurs", icon: "Truck", role: "ADMIN" },
   { href: "/rates", label: "Taux", icon: "History", role: "ADMIN" },
+  { href: "/currencies", label: "Devises", icon: "Globe", role: "ADMIN" },
   { href: "/rapports", label: "Rapports", icon: "FileText", role: "ADMIN" },
   { href: "/logs", label: "Logs", icon: "BarChart3", role: "ADMIN" },
   { href: "/settings", label: "Settings", icon: "Settings", role: "ADMIN" }

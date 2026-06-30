@@ -80,6 +80,7 @@ export function canAccessRoute(role: string | null | undefined, pathname: string
 
   if (pathname.startsWith("/caisse")) return hasPermission(role, "cash:view");
   if (pathname.startsWith("/rates")) return hasPermission(role, "rates:view");
+  if (pathname.startsWith("/currencies")) return hasPermission(role, "currencies:manage");
   if (pathname.startsWith("/clients")) return hasPermission(role, "clients:view");
   if (pathname.startsWith("/suppliers")) return hasPermission(role, "suppliers:view");
   if (pathname.startsWith("/stock")) return hasPermission(role, "stock:view");
@@ -92,10 +93,10 @@ export function canAccessRoute(role: string | null | undefined, pathname: string
   if (pathname.startsWith("/api/logs")) return hasPermission(role, "logs:view");
   if (pathname.startsWith("/api/rapports")) return hasPermission(role, "reports:view");
   if (pathname.startsWith("/api/rates")) return hasPermission(role, "rates:manage");
+  if (pathname.startsWith("/api/currencies")) return hasPermission(role, "currencies:manage");
   if (pathname.startsWith("/api/clients")) return hasPermission(role, "clients:view");
   if (pathname.startsWith("/api/suppliers")) return hasPermission(role, "suppliers:view");
   if (pathname.startsWith("/api/stock")) return hasPermission(role, "stock:view");
   if (pathname.startsWith("/api/caisse")) return hasPermission(role, "cash:view");
-  if (pathname.startsWith("/api/currencies")) return hasPermission(role, "currencies:manage");
   return true;
 }
