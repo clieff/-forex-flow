@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import type { Role } from "@prisma/client";
 
 /**
@@ -26,12 +27,34 @@ export async function getServerSession(): Promise<{
     return { user: null };
   }
 
+  let role = session.user.role;
+
+  if (!role && session.user.id) {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
+    role = dbUser?.role;
+  }
+
+  if (!role && session.user.email) {
+    const dbUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { role: true }
+    });
+    role = dbUser?.role;
+  }
+
+  if (!role) {
+    role = "AGENT";
+  }
+
   return {
     user: {
       id: session.user.id,
       email: session.user.email ?? null,
       name: session.user.name ?? null,
-      role: session.user.role
+      role
     }
   };
 }
