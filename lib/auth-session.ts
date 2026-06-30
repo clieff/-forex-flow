@@ -26,33 +26,26 @@ export async function getServerSession(): Promise<{
   if (!session?.user) {
     return { user: null };
   }
+  const dbUser = session.user.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { id: true, email: true, name: true, role: true }
+      })
+    : session.user.email
+      ? await prisma.user.findUnique({
+          where: { email: session.user.email },
+          select: { id: true, email: true, name: true, role: true }
+        })
+      : null;
 
-  let role: Role | undefined = session.user.role;
-
-  if (!role && session.user.id) {
-    const dbUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true }
-    });
-    role = dbUser?.role;
-  }
-
-  if (!role && session.user.email) {
-    const dbUser = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { role: true }
-    });
-    role = dbUser?.role;
-  }
-
-  const resolvedRole: Role = role ?? "AGENT";
+  const resolvedRole: Role | undefined = dbUser?.role ?? session.user.role;
 
   return {
     user: {
-      id: session.user.id,
-      email: session.user.email ?? null,
-      name: session.user.name ?? null,
-      role: resolvedRole
+      id: dbUser?.id ?? session.user.id,
+      email: dbUser?.email ?? session.user.email ?? null,
+      name: dbUser?.name ?? session.user.name ?? null,
+      role: resolvedRole as Role
     }
   };
 }
