@@ -5,13 +5,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toNumber } from "@/lib/decimal";
 import { getStockBalances } from "@/lib/stock";
 import { StockMovementFormWrapper } from "@/components/stock/stock-movement-form-wrapper";
-import { isAdminRole } from "@/lib/roles";
+import { hasPermission } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
 export default async function StockPage() {
   const { user } = await getServerSession();
-  const isAdmin = isAdminRole(user?.role);
+  const isAdmin = hasPermission(user?.role, "stock:manage");
   const balances = await getStockBalances();
 
   return (

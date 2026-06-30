@@ -5,14 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRateManagementData } from "@/lib/dashboard";
 import { toNumber } from "@/lib/decimal";
-import { isAdminRole } from "@/lib/roles";
+import { hasPermission } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
 export default async function RatesPage() {
   const { user } = await getServerSession();
   const data = await getRateManagementData();
-  const editable = isAdminRole(user?.role);
+  const editable = hasPermission(user?.role, "rates:manage");
 
   return (
     <PageTransition className="space-y-4 md:space-y-6">

@@ -1,13 +1,9 @@
 import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
-import { isAdminRole } from "./lib/roles";
+import { canAccessRoute } from "./lib/roles";
 
 const { auth } = NextAuth(authConfig);
 
-const adminOnlyPaths = [
-  "/rates", "/logs", "/settings", "/stock", "/suppliers", "/caisse", "/rapports",
-  "/api/rates", "/api/stock", "/api/suppliers", "/api/caisse", "/api/rapports", "/api/users", "/api/transactions/export"
-];
 const protectedPrefixes = [
   "/",
   "/transactions", "/caisse", "/rapports", "/rates", "/logs", "/settings",
@@ -35,13 +31,7 @@ export default auth((req) => {
     return Response.redirect(signInUrl);
   }
 
-  const isAdminOnly = adminOnlyPaths.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  );
-
-  const role = session?.user?.role;
-
-  if (isAdminOnly && !isAdminRole(role)) {
+  if (session?.user && !canAccessRoute(session.user.role, pathname)) {
     const deniedUrl = new URL("/access-denied", req.nextUrl.origin);
     deniedUrl.searchParams.set("from", pathname);
     return Response.redirect(deniedUrl);
