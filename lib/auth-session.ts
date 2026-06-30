@@ -27,7 +27,7 @@ export async function getServerSession(): Promise<{
     return { user: null };
   }
 
-  let role = session.user.role;
+  let role: Role | undefined = session.user.role;
 
   if (!role && session.user.id) {
     const dbUser = await prisma.user.findUnique({
@@ -45,16 +45,14 @@ export async function getServerSession(): Promise<{
     role = dbUser?.role;
   }
 
-  if (!role) {
-    role = "AGENT";
-  }
+  const resolvedRole: Role = role ?? "AGENT";
 
   return {
     user: {
       id: session.user.id,
       email: session.user.email ?? null,
       name: session.user.name ?? null,
-      role
+      role: resolvedRole
     }
   };
 }
