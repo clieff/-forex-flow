@@ -14,11 +14,19 @@ import { Label } from "@/components/ui/label";
 const schema = z.object({
   direction: z.enum(["IN", "OUT"]),
   amount: z.number().positive("Montant invalide"),
+  method: z.enum(["CASH", "MOBILE_MONEY", "BANK_TRANSFER", "BANK_DEPOSIT"]),
   reason: z.enum(["DEPOT", "RETRAIT", "DEPENSE", "AJUSTEMENT", "AUTRE"]),
   note: z.string().max(200).optional().or(z.literal(""))
 });
 
 type FormValues = z.infer<typeof schema>;
+
+const METHODS = [
+  { value: "CASH", label: "Cash Physique" },
+  { value: "MOBILE_MONEY", label: "Liquidité (MM)" },
+  { value: "BANK_TRANSFER", label: "Banque" },
+  { value: "BANK_DEPOSIT", label: "Banque (Dépôt)" }
+] as const;
 
 const REASONS = [
   { value: "DEPOT", label: "Dépôt de fonds" },
@@ -37,6 +45,7 @@ export function CaissePanel() {
     defaultValues: {
       direction: "IN",
       amount: 0,
+      method: "CASH",
       reason: "DEPOT",
       note: ""
     }
@@ -111,7 +120,7 @@ export function CaissePanel() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Montant (XAF)</Label>
               <Controller
@@ -129,6 +138,26 @@ export function CaissePanel() {
               {form.formState.errors.amount && (
                 <p className="text-sm text-forex-danger">{form.formState.errors.amount.message}</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Compte / Moyen</Label>
+              <Controller
+                control={form.control}
+                name="method"
+                render={({ field }) => (
+                  <select
+                    {...field}
+                    className="flex h-12 w-full rounded-2xl border border-forex-border bg-white/5 px-4 text-sm text-forex-text outline-none"
+                  >
+                    {METHODS.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              />
             </div>
 
             <div className="space-y-2">

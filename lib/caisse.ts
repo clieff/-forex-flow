@@ -6,23 +6,23 @@ export async function getCaisseData() {
   const today = new Date();
   const weekStart = startOfDay(subDays(today, 6));
 
-  const [txByType, cashByDirection, recentTx, movements] = await Promise.all([
-    // Totaux XAF agrégés sur TOUTES les transactions
+  const [txByMethod, cashByMethod, recentTx, movements] = await Promise.all([
+    // Agrégation des transactions par type et méthode
     prisma.transaction.groupBy({
-      by: ["type"],
+      by: ["type", "paymentMethod"],
       _sum: { amountGiven: true, amountReceived: true }
     }),
-    // Totaux des mouvements manuels agrégés sur TOUS les mouvements
+    // Agrégation des mouvements manuels par direction et méthode
     prisma.cashMovement.groupBy({
-      by: ["direction"],
+      by: ["direction", "method"],
       _sum: { amount: true }
     }),
-    // Transactions des 7 derniers jours uniquement (graphique + jour)
+    // Transactions récentes pour le graphique
     prisma.transaction.findMany({
       where: { createdAt: { gte: weekStart } },
-      select: { type: true, amountGiven: true, amountReceived: true, createdAt: true }
+      select: { type: true, amountGiven: true, amountReceived: true, createdAt: true, paymentMethod: true }
     }),
-    // Liste d'affichage (50 derniers mouvements)
+    // Liste d'affichage
     prisma.cashMovement.findMany({
       include: { createdBy: { select: { name: true } } },
       orderBy: { createdAt: "desc" },
@@ -30,19 +30,45 @@ export async function getCaisseData() {
     })
   ]);
 
-  // Flux XAF auto depuis les transactions (SELL = entrée XAF, BUY = sortie XAF)
-  const sellAgg = txByType.find((row) => row.type === "SELL");
-  const buyAgg = txByType.find((row) => row.type === "BUY");
-  const xafIn = toNumber(sellAgg?._sum.amountGiven ?? 0);
-  const xafOut = toNumber(buyAgg?._sum.amountReceived ?? 0);
+  const calculateBalanceForMethods = (methods: string[]) => {
+    const txIn = txByMethod
+      .filter((row) => row.type === "SELL" && methods.includes(row.paymentMethod))
+      .reduce((sum, row) => sum + toNumber(row._sum.amountGiven ?? 0), 0);
 
-  // Ajustements manuels (sur l'intégralité des mouvements)
-  const inAgg = cashByDirection.find((row) => row.direction === "IN");
-  const outAgg = cashByDirection.find((row) => row.direction === "OUT");
-  const manualIn = toNumber(inAgg?._sum.amount ?? 0);
-  const manualOut = toNumber(outAgg?._sum.amount ?? 0);
+    const txOut = txByMethod
+      .filter((row) => row.type === "BUY" && methods.includes(row.paymentMethod))
+      .reduce((sum, row) => sum + toNumber(row._sum.amountReceived ?? 0), 0);
 
-  const balance = xafIn - xafOut + manualIn - manualOut;
+    const manualIn = cashByMethod
+      .filter((row) => row.direction === "IN" && methods.includes(row.method))
+      .reduce((sum, row) => sum + toNumber(row._sum.amount ?? 0), 0);
+
+    const manualOut = cashByMethod
+      .filter((row) => row.direction === "OUT" && methods.includes(row.method))
+      .reduce((sum, row) => sum + toNumber(row._sum.amount ?? 0), 0);
+
+    return txIn - txOut + manualIn - manualOut;
+  };
+
+  const cashBalance = calculateBalanceForMethods(["CASH"]);
+  const liquidBalance = calculateBalanceForMethods(["MOBILE_MONEY"]);
+  const bankBalance = calculateBalanceForMethods(["BANK_TRANSFER", "BANK_DEPOSIT"]);
+
+  const balance = cashBalance + liquidBalance + bankBalance;
+
+  // Calculer les totaux globaux pour l'UI existante (rétrocompatibilité)
+  const xafIn = txByMethod
+    .filter((row) => row.type === "SELL")
+    .reduce((sum, row) => sum + toNumber(row._sum.amountGiven ?? 0), 0);
+  const xafOut = txByMethod
+    .filter((row) => row.type === "BUY")
+    .reduce((sum, row) => sum + toNumber(row._sum.amountReceived ?? 0), 0);
+  const manualIn = cashByMethod
+    .filter((row) => row.direction === "IN")
+    .reduce((sum, row) => sum + toNumber(row._sum.amount ?? 0), 0);
+  const manualOut = cashByMethod
+    .filter((row) => row.direction === "OUT")
+    .reduce((sum, row) => sum + toNumber(row._sum.amount ?? 0), 0);
 
   // Flux XAF des 7 derniers jours pour le graphique
   const weeklyFlow = Array.from({ length: 7 }).map((_, i) => {
@@ -73,6 +99,9 @@ export async function getCaisseData() {
 
   return {
     balance,
+    cashBalance,
+    liquidBalance,
+    bankBalance,
     xafIn,
     xafOut,
     manualIn,
@@ -84,6 +113,7 @@ export async function getCaisseData() {
       id: m.id,
       direction: m.direction,
       amount: toNumber(m.amount),
+      method: m.method,
       reason: m.reason,
       note: m.note,
       createdBy: m.createdBy.name,

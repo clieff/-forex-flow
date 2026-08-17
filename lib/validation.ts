@@ -5,7 +5,7 @@ export const transactionSchema = z.object({
   type: z.enum(["BUY", "SELL"]),
   currencyCode: z.string().min(3).max(3),
   amountGiven: z
-    .number({ invalid_type_error: "Montant invalide" })
+    .number()
     .positive("Le montant doit être supérieur à 0")
     .refine((value) => decimalPlaces(value) <= 2, "Maximum 2 décimales"),
   clientName: z.string().trim().max(120).optional().or(z.literal("")),

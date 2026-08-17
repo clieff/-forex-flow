@@ -13,7 +13,7 @@ const protectedPrefixes = [
   "/api/clients", "/api/suppliers", "/api/currencies", "/api/stock", "/api/cash"
 ];
 
-export default auth((req) => {
+export default auth((req: any) => {
   const { pathname } = req.nextUrl;
   const session = req.auth; // contient la session déchiffrée
 

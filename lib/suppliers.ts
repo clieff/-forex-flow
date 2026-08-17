@@ -146,6 +146,131 @@ export async function getSuppliersOverview() {
   });
 }
 
+export async function getSupplierDetails(id: string) {
+  const supplier = await prisma.supplier.findUnique({
+    where: { id },
+    include: {
+      debts: {
+        orderBy: [{ amount: "desc" }, { currencyCode: "asc" }]
+      },
+      moves: {
+        orderBy: { createdAt: "desc" },
+        take: 100,
+        include: {
+          createdBy: {
+            select: { id: true, name: true }
+          },
+          transaction: {
+            select: {
+              id: true,
+              receiptNumber: true,
+              clientName: true,
+              client: {
+                select: { id: true, name: true }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!supplier) return null;
+
+  // Réutilisation de la logique de calcul de position pour ce fournisseur spécifique
+  const byCurrency = new Map<string, SupplierCurrencyAccumulator>();
+
+  // Note: Pour un détail complet, il faudrait idéalement parcourir TOUS les moves,
+  // pas juste les 100 derniers, pour le calcul des soldes.
+  // On va refaire une requête légère pour les stats globales si besoin,
+  // mais ici on va se baser sur ce qu'on a.
+
+  const allMoves = await prisma.stockMovement.findMany({
+    where: { supplierId: id },
+    orderBy: { createdAt: "desc" }
+  });
+
+  for (const move of allMoves) {
+    const current =
+      byCurrency.get(move.currencyCode) ??
+      {
+        currencyCode: move.currencyCode,
+        stockBalance: 0,
+        debtBalance: 0,
+        totalPurchased: 0,
+        totalSold: 0,
+        totalCostXaf: 0,
+        pricedAmount: 0,
+        lastBuyRate: null
+      };
+
+    const amount = toNumber(move.amount);
+    current.stockBalance += move.direction === "IN" ? amount : -amount;
+    if (move.direction === "IN") {
+      current.totalPurchased += amount;
+    } else {
+      current.totalSold += amount;
+    }
+    if (move.reason === "SUPPLIER_PURCHASE" && move.direction === "IN" && move.unitPrice) {
+      const unitPrice = toNumber(move.unitPrice);
+      current.totalCostXaf += toNumber(move.totalCostXaf ?? move.amount.mul(move.unitPrice));
+      current.pricedAmount += amount;
+      if (current.lastBuyRate === null) current.lastBuyRate = unitPrice;
+    }
+    byCurrency.set(move.currencyCode, current);
+  }
+
+  for (const debt of supplier.debts) {
+    const current = byCurrency.get(debt.currencyCode);
+    if (current) current.debtBalance = toNumber(debt.amount);
+  }
+
+  const positions = [...byCurrency.values()]
+    .map((entry) => ({
+      currencyCode: entry.currencyCode,
+      stockBalance: entry.stockBalance,
+      debtBalance: entry.debtBalance,
+      totalPurchased: entry.totalPurchased,
+      totalSold: entry.totalSold,
+      averageBuyRate: entry.pricedAmount > 0 ? entry.totalCostXaf / entry.pricedAmount : null,
+      lastBuyRate: entry.lastBuyRate
+    }))
+    .sort((a, b) => a.currencyCode.localeCompare(b.currencyCode));
+
+  return {
+    id: supplier.id,
+    name: supplier.name,
+    contact: supplier.contact,
+    createdAt: supplier.createdAt,
+    debts: supplier.debts.map((debt) => ({
+      id: debt.id,
+      currencyCode: debt.currencyCode,
+      amount: toNumber(debt.amount),
+      note: debt.note,
+      updatedAt: debt.updatedAt
+    })),
+    positions,
+    movements: supplier.moves.map((move) => ({
+      id: move.id,
+      currencyCode: move.currencyCode,
+      direction: move.direction,
+      reason: move.reason,
+      amount: toNumber(move.amount),
+      note: move.note,
+      unitPrice: move.unitPrice ? toNumber(move.unitPrice) : null,
+      totalCostXaf: move.totalCostXaf ? toNumber(move.totalCostXaf) : null,
+      createdAt: move.createdAt,
+      createdBy: move.createdBy.name,
+      receiptNumber: move.transaction?.receiptNumber ?? null,
+    })),
+    summary: {
+      totalMovements: allMoves.length,
+      outstandingDebt: supplier.debts.reduce((sum, debt) => sum + toNumber(debt.amount), 0),
+      lastMovementAt: allMoves[0]?.createdAt ?? null
+    }
+  };
+}
+
 export async function getSupplierHistory() {
   const suppliers = await getSuppliersOverview();
 

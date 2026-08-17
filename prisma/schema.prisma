@@ -243,6 +243,7 @@ model CashMovement {
   id          String        @id @default(cuid())
   direction   CashDirection
   amount      Decimal       @db.Decimal(18, 2)
+  method      PaymentMethod @default(CASH)
   reason      CashReason
   note        String?
   createdById String

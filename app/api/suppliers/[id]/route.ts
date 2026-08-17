@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
-import { getSuppliersOverview } from "@/lib/suppliers";
+import { getSupplierDetails } from "@/lib/suppliers";
 import { createLog } from "@/lib/logs";
 import { isAdminRole } from "@/lib/roles";
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const { user } = await getServerSession();
-  if (!user || !isAdminRole(user.role)) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const suppliers = await getSuppliersOverview();
-  const supplier = suppliers.find((entry) => entry.id === params.id);
+  const supplier = await getSupplierDetails(params.id);
 
   if (!supplier) {
     return NextResponse.json({ error: "Supplier not found" }, { status: 404 });

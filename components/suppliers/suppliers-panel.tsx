@@ -17,12 +17,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { SupplierDto } from "@/types/dto";
+import { SupplierDetailDialog } from "./supplier-detail-dialog";
 
 export function SuppliersPanel() {
   const [items, setItems] = useState<SupplierDto[]>([]);
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
 
   async function refresh() {
     const res = await fetch("/api/suppliers");
@@ -65,6 +67,11 @@ export function SuppliersPanel() {
 
   return (
     <div className="space-y-6 xl:space-y-7">
+      <SupplierDetailDialog
+        supplierId={selectedSupplierId}
+        isOpen={!!selectedSupplierId}
+        onClose={() => setSelectedSupplierId(null)}
+      />
       <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(145deg,rgba(20,33,51,0.98),rgba(12,20,34,0.96))] p-5 shadow-[0_24px_60px_rgba(3,8,18,0.34)] xl:p-6">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(0,201,167,0.14),transparent_28%),radial-gradient(circle_at_left_center,rgba(0,180,216,0.09),transparent_22%)]" />
         <div className="relative space-y-5">
@@ -110,7 +117,11 @@ export function SuppliersPanel() {
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:[grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]">
           {items.map((supplier) => (
-            <SupplierCard key={supplier.id} supplier={supplier} />
+            <SupplierCard
+              key={supplier.id}
+              supplier={supplier}
+              onViewDetails={() => setSelectedSupplierId(supplier.id)}
+            />
           ))}
         </div>
       )}
@@ -118,7 +129,13 @@ export function SuppliersPanel() {
   );
 }
 
-function SupplierCard({ supplier }: { supplier: SupplierDto }) {
+function SupplierCard({
+  supplier,
+  onViewDetails
+}: {
+  supplier: SupplierDto;
+  onViewDetails: () => void;
+}) {
   return (
     <Card className="group relative h-full overflow-hidden border-white/10 bg-[linear-gradient(180deg,rgba(20,29,45,0.98),rgba(13,20,33,0.98))] shadow-[0_20px_46px_rgba(4,10,20,0.28)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,201,167,0.10),transparent_25%),radial-gradient(circle_at_bottom_right,rgba(0,180,216,0.08),transparent_24%)] opacity-80" />
@@ -136,19 +153,28 @@ function SupplierCard({ supplier }: { supplier: SupplierDto }) {
             </p>
           </div>
 
-          <div className="rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,18,32,0.98),rgba(12,24,39,0.96))] px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] md:min-h-[96px] md:text-right">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-forex-muted">
-              Dernier mouvement
-            </p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-white">
-              {supplier.summary.lastMovementAt
-                ? new Date(supplier.summary.lastMovementAt).toLocaleDateString("fr-FR", {
-                    year: "2-digit",
-                    month: "2-digit",
-                    day: "2-digit",
-                  })
-                : "--"}
-            </p>
+          <div className="space-y-3">
+            <div className="rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(8,18,32,0.98),rgba(12,24,39,0.96))] px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] md:min-h-[96px] md:text-right">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-forex-muted">
+                Dernier mouvement
+              </p>
+              <p className="mt-2 text-2xl font-semibold tabular-nums text-white">
+                {supplier.summary.lastMovementAt
+                  ? new Date(supplier.summary.lastMovementAt).toLocaleDateString("fr-FR", {
+                      year: "2-digit",
+                      month: "2-digit",
+                      day: "2-digit",
+                    })
+                  : "--"}
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={onViewDetails}
+              className="w-full h-10 rounded-xl border-white/10 bg-white/[0.05] text-xs uppercase tracking-widest text-white hover:bg-white/[0.1] transition-all"
+            >
+              Approfondir
+            </Button>
           </div>
         </div>
 

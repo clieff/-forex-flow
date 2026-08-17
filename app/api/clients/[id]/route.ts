@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
-import { getClientsOverview } from "@/lib/clients";
+import { getClientDetails } from "@/lib/clients";
 import { createLog } from "@/lib/logs";
 import { isAdminRole } from "@/lib/roles";
 
@@ -17,8 +17,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const clients = await getClientsOverview();
-  const client = clients.find((entry) => entry.id === params.id);
+  const client = await getClientDetails(params.id);
 
   if (!client) {
     return NextResponse.json({ error: "Client not found" }, { status: 404 });

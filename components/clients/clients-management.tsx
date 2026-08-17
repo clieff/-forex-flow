@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/formatters";
 import type { ClientDto, CurrencyDto } from "@/types/dto";
+import { ClientDetailDialog } from "./client-detail-dialog";
 
 export function ClientsManagement() {
   const [clients, setClients] = useState<ClientDto[]>([]);
@@ -18,6 +19,7 @@ export function ClientsManagement() {
   const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState("");
   const [newContact, setNewContact] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   async function loadData() {
     const [resClients, resCurrencies] = await Promise.all([fetch("/api/clients"), fetch("/api/rates")]);
@@ -62,6 +64,11 @@ export function ClientsManagement() {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      <ClientDetailDialog
+        clientId={selectedClientId}
+        isOpen={!!selectedClientId}
+        onClose={() => setSelectedClientId(null)}
+      />
       <section className="panel p-4 md:p-6">
         <div className="mb-6">
           <p className="text-sm uppercase tracking-premium text-forex-muted">Customer Relations</p>
@@ -91,7 +98,13 @@ export function ClientsManagement() {
 
       <div className="grid gap-4 xl:grid-cols-2">
         {clients.map((client) => (
-          <ClientCard key={client.id} client={client} currencies={currencies} onRefresh={loadData} />
+          <ClientCard
+            key={client.id}
+            client={client}
+            currencies={currencies}
+            onRefresh={loadData}
+            onViewDetails={() => setSelectedClientId(client.id)}
+          />
         ))}
       </div>
     </div>
@@ -101,11 +114,13 @@ export function ClientsManagement() {
 function ClientCard({
   client,
   currencies,
-  onRefresh
+  onRefresh,
+  onViewDetails
 }: {
   client: ClientDto;
   currencies: CurrencyDto[];
   onRefresh: () => Promise<void> | void;
+  onViewDetails: () => void;
 }) {
   const totalDebt = client.debts.reduce((sum, debt) => sum + debt.amount, 0);
 
@@ -117,14 +132,24 @@ function ClientCard({
             <CardTitle className="text-xl text-white">{client.name}</CardTitle>
             <p className="mt-1 text-sm text-forex-muted">{client.contact || "Aucun contact renseigne"}</p>
           </div>
-          <span
-            className={cn(
-              "inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold",
-              totalDebt > 0 ? "bg-red-500/15 text-red-300" : totalDebt < 0 ? "bg-emerald-500/15 text-emerald-300" : "bg-white/10 text-forex-muted"
-            )}
-          >
-            Solde dette: {totalDebt.toFixed(2)}
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <span
+              className={cn(
+                "inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold",
+                totalDebt > 0 ? "bg-red-500/15 text-red-300" : totalDebt < 0 ? "bg-emerald-500/15 text-emerald-300" : "bg-white/10 text-forex-muted"
+              )}
+            >
+              Solde dette: {totalDebt.toFixed(2)}
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onViewDetails}
+              className="h-8 rounded-xl border-white/10 bg-white/[0.05] text-[10px] uppercase tracking-widest text-white hover:bg-white/[0.1]"
+            >
+              Approfondir
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">

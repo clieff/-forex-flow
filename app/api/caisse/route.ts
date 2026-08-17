@@ -10,6 +10,7 @@ import { isAdminRole } from "@/lib/roles";
 const cashMovementSchema = z.object({
   direction: z.enum(["IN", "OUT"]),
   amount: z.number().positive("Le montant doit être positif"),
+  method: z.enum(["CASH", "MOBILE_MONEY", "BANK_TRANSFER", "BANK_DEPOSIT"]).default("CASH"),
   reason: z.enum(["DEPOT", "RETRAIT", "DEPENSE", "AJUSTEMENT", "AUTRE"]),
   note: z.string().max(200).optional().or(z.literal(""))
 });
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
     data: {
       direction: parsed.data.direction,
       amount: parsed.data.amount,
+      method: parsed.data.method,
       reason: parsed.data.reason,
       note: parsed.data.note || null,
       createdById: user.id
@@ -58,7 +60,7 @@ export async function POST(request: Request) {
   await createLog({
     category: "CASH",
     action: `CASH_${movement.direction}`,
-    details: `${movement.amount} XAF - ${movement.reason}${movement.note ? ` (${movement.note})` : ""}`,
+    details: `${movement.amount} XAF (${movement.method}) - ${movement.reason}${movement.note ? ` (${movement.note})` : ""}`,
     userId: user.id
   });
 

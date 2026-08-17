@@ -13,6 +13,13 @@ import { hasPermission } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
+const METHOD_LABELS: Record<string, string> = {
+  CASH: "Cash",
+  MOBILE_MONEY: "Liquidité (MM)",
+  BANK_TRANSFER: "Banque",
+  BANK_DEPOSIT: "Banque (Dépôt)"
+};
+
 const REASON_LABELS: Record<string, string> = {
   DEPOT: "Dépôt",
   RETRAIT: "Retrait",
@@ -54,7 +61,46 @@ export default async function CaissePage() {
         </div>
       </section>
 
-      {/* Métriques */}
+      {/* Métriques de répartition des fonds */}
+      <section className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        {[
+          {
+            label: "Cash Physique",
+            value: formatMoney(data.cashBalance),
+            icon: Wallet,
+            color: "text-forex-mint",
+            bg: "bg-forex-mint/10 border-forex-mint/20"
+          },
+          {
+            label: "Liquidité Digitale (MM)",
+            value: formatMoney(data.liquidBalance),
+            icon: TrendingUp,
+            color: "text-forex-lagoon",
+            bg: "bg-forex-lagoon/10 border-forex-lagoon/20"
+          },
+          {
+            label: "Comptes Bancaires",
+            value: formatMoney(data.bankBalance),
+            icon: ArrowUpRight,
+            color: "text-white",
+            bg: "bg-white/5 border-white/10"
+          }
+        ].map((item) => (
+          <Card key={item.label} className={`border ${item.bg} relative overflow-hidden`}>
+            <div className="absolute top-0 right-0 p-3 opacity-10">
+              <item.icon className="h-12 w-12" />
+            </div>
+            <CardHeader className="pb-2">
+              <p className="text-xs uppercase tracking-premium text-forex-muted">{item.label}</p>
+            </CardHeader>
+            <CardContent>
+              <p className={`text-3xl font-bold ${item.color}`}>{item.value}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </section>
+
+      {/* Métriques flux */}
       <section className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 md:gap-4">
         {[
           {
@@ -154,6 +200,7 @@ export default async function CaissePage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Type</TableHead>
+                  <TableHead>Compte</TableHead>
                   <TableHead>Montant</TableHead>
                   <TableHead>Motif</TableHead>
                   <TableHead>Note</TableHead>
@@ -170,6 +217,11 @@ export default async function CaissePage() {
                         : "border-forex-danger/20 bg-forex-danger/10 text-forex-danger"
                       }>
                         {m.direction === "IN" ? "Entrée" : "Sortie"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className="border-white/10 text-xs">
+                        {METHOD_LABELS[m.method] ?? m.method}
                       </Badge>
                     </TableCell>
                     <TableCell className={`font-semibold ${m.direction === "IN" ? "text-forex-mint" : "text-forex-danger"}`}>
