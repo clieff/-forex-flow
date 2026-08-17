@@ -1,5 +1,6 @@
 // auth.config.ts
 export const authConfig = {
+  trustHost: true,
   pages: {
     signIn: "/sign-in",
   },
