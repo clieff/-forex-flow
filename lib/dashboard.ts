@@ -247,7 +247,10 @@ export async function getTransactionById(id: string) {
     include: {
       currency: true,
       createdBy: true,
-      client: true
+      client: true,
+      stockMove: {
+        include: { supplier: true }
+      }
     }
   });
 }

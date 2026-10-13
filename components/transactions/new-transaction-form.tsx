@@ -68,7 +68,7 @@ export function NewTransactionForm({
       amountGiven: 100,
       clientName: "",
       clientId: "",
-      supplierId: "GENERAL",
+      supplierId: "",
       isDebt: false,
       customRate: null,
       paymentMethod: "CASH",
@@ -81,6 +81,13 @@ export function NewTransactionForm({
     (currency) => currency.code === values.currencyCode,
   );
   const selectedClient = clients.find((c) => c.id === values.clientId);
+  const selectedSupplier = suppliers.find((supplier) => supplier.id === values.supplierId);
+  const counterpartyName =
+    values.type === "BUY"
+      ? selectedSupplier?.name
+      : isRegular
+        ? selectedClient?.name
+        : values.clientName;
 
   const currentStock = useMemo(() => {
     if (!values.currencyCode) return 0;
@@ -184,9 +191,16 @@ export function NewTransactionForm({
       body: JSON.stringify({
         ...payload,
         supplierId:
-          payload.supplierId === "GENERAL" ? undefined : payload.supplierId,
-        clientName: isRegular ? selectedClient?.name : payload.clientName,
-        clientId: isRegular ? payload.clientId : undefined,
+          !payload.supplierId || payload.supplierId === "GENERAL"
+            ? undefined
+            : payload.supplierId,
+        clientName:
+          payload.type === "SELL"
+            ? isRegular
+              ? selectedClient?.name
+              : payload.clientName
+            : undefined,
+        clientId: payload.type === "SELL" && isRegular ? payload.clientId : undefined,
       }),
     });
 
@@ -225,7 +239,8 @@ export function NewTransactionForm({
           </h3>
         </div>
 
-        <div className="mb-6 flex gap-2 rounded-2xl border border-white/10 bg-white/5 p-1 w-fit">
+        {values.type === "SELL" && (
+          <div className="mb-6 flex gap-2 rounded-2xl border border-white/10 bg-white/5 p-1 w-fit">
           <button
             type="button"
             onClick={() => setIsRegular(false)}
@@ -242,7 +257,8 @@ export function NewTransactionForm({
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Habitué</span>
           </button>
-        </div>
+          </div>
+        )}
 
         <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
           <div className="grid gap-6 md:grid-cols-3">
@@ -254,6 +270,15 @@ export function NewTransactionForm({
                 render={({ field }) => (
                   <select
                     {...field}
+                    onChange={(event) => {
+                      const nextType = event.target.value as TransactionFormValues["type"];
+                      field.onChange(nextType);
+                      setIsRegular(false);
+                      form.setValue("clientId", "");
+                      form.setValue("clientName", "");
+                      form.setValue("supplierId", nextType === "SELL" ? "GENERAL" : "");
+                      form.setValue("isDebt", false);
+                    }}
                     className="flex h-12 w-full rounded-2xl border border-forex-border bg-white/5 px-4 text-sm text-forex-text outline-none"
                   >
                     <option value="BUY">Achat</option>
@@ -314,8 +339,26 @@ export function NewTransactionForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Client</Label>
-              {isRegular ? (
+              <Label>{values.type === "BUY" ? "Fournisseur" : "Client"}</Label>
+              {values.type === "BUY" ? (
+                <Controller
+                  control={form.control}
+                  name="supplierId"
+                  render={({ field }) => (
+                    <select
+                      {...field}
+                      className="flex h-12 w-full rounded-2xl border border-forex-border bg-white/5 px-4 text-sm text-forex-text outline-none"
+                    >
+                      <option value="">-- Achat comptoir / sans fournisseur --</option>
+                      {suppliers.map((supplier) => (
+                        <option key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                />
+              ) : isRegular ? (
                 <Controller
                   control={form.control}
                   name="clientId"
@@ -450,7 +493,9 @@ export function NewTransactionForm({
                 />
                 <div className="text-sm">
                   <span className="text-white group-hover:text-forex-mint transition">
-                    Recouvrer une créance
+                    {values.type === "BUY"
+                      ? "Enregistrer comme achat à crédit"
+                      : "Régler une dette fournisseur"}
                   </span>
                   {currentDebt > 0 && (
                     <p className="text-xs text-forex-muted">
@@ -526,7 +571,8 @@ export function NewTransactionForm({
             amountGiven={values.amountGiven ?? 0}
             amountReceived={computed.amountReceived}
             type={values.type}
-            clientName={isRegular ? selectedClient?.name : values.clientName}
+            clientName={counterpartyName}
+            counterpartyLabel={values.type === "BUY" ? "Fournisseur" : "Client"}
             rate={computed.rate}
           />
         </div>
@@ -538,7 +584,8 @@ export function NewTransactionForm({
           amountGiven={values.amountGiven ?? 0}
           amountReceived={computed.amountReceived}
           type={values.type}
-          clientName={isRegular ? selectedClient?.name : values.clientName}
+          clientName={counterpartyName}
+          counterpartyLabel={values.type === "BUY" ? "Fournisseur" : "Client"}
           rate={computed.rate}
         />
       </aside>

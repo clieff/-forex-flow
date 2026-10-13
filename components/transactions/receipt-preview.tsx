@@ -11,6 +11,7 @@ export function ReceiptPreview({
   amountReceived,
   type,
   clientName,
+  counterpartyLabel = "Client",
   rate,
 }: {
   currency?: CurrencyDto;
@@ -18,6 +19,7 @@ export function ReceiptPreview({
   amountReceived: number;
   type: Type;
   clientName?: string;
+  counterpartyLabel?: string;
   rate: number;
 }) {
   return (
@@ -40,7 +42,7 @@ export function ReceiptPreview({
       </div>
 
       <div className="space-y-3 border-y border-dashed border-slate-300 py-4 lg:py-5">
-        <ReceiptRow label="Client" value={clientName || "Walk-in"} />
+        <ReceiptRow label={counterpartyLabel} value={clientName || "Comptoir"} />
         <ReceiptRow label="Devise" value={currency?.code ?? "--"} />
         <ReceiptRow
           label="Montant donne"

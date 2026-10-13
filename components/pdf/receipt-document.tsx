@@ -1,6 +1,6 @@
 import React from "react";
 import { Document, Page, StyleSheet, Text, View, Image } from "@react-pdf/renderer";
-import type { Currency, Transaction, User, Client, PaymentMethod } from "@prisma/client";
+import type { Currency, Transaction, User, Client, PaymentMethod, StockMovement, Supplier } from "@prisma/client";
 
 const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   CASH: "Espèces",
@@ -68,9 +68,16 @@ export function ReceiptDocument({
     currency: Currency; 
     createdBy: User;
     client?: Client | null;
+    stockMove?: (StockMovement & { supplier?: Supplier | null }) | null;
   };
   qrCodeDataUrl?: string;
 }) {
+  const counterpartyLabel = transaction.type === "BUY" ? "Fournisseur" : "Client";
+  const counterpartyName =
+    transaction.type === "BUY"
+      ? transaction.stockMove?.supplier?.name || "Comptoir"
+      : transaction.client?.name || transaction.clientName || "Walk-in";
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -94,8 +101,8 @@ export function ReceiptDocument({
             <Text style={styles.value}>{new Date(transaction.createdAt).toLocaleString("fr-FR")}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Client</Text>
-            <Text style={styles.value}>{transaction.client?.name || transaction.clientName || "Walk-in"}</Text>
+            <Text style={styles.label}>{counterpartyLabel}</Text>
+            <Text style={styles.value}>{counterpartyName}</Text>
           </View>
           {transaction.client?.contact && (
             <View style={styles.row}>
