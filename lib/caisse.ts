@@ -123,7 +123,26 @@ export async function getCaisseData({
   userId: string;
   includeGlobal: boolean;
 }) {
-  const personal = await getSnapshot({ createdById: userId });
-  const global = includeGlobal ? await getSnapshot({}) : null;
-  return { personal, global };
+  const [personal, global, agents] = await Promise.all([
+    getSnapshot({ createdById: userId }),
+    includeGlobal ? getSnapshot({}) : Promise.resolve(null),
+    includeGlobal
+      ? prisma.user.findMany({
+          where: { role: "AGENT" },
+          select: { id: true, name: true, email: true },
+          orderBy: { name: "asc" }
+        })
+      : Promise.resolve([])
+  ]);
+
+  const agentCashes = includeGlobal
+    ? await Promise.all(
+        agents.map(async (agent) => ({
+          agent,
+          snapshot: await getSnapshot({ createdById: agent.id })
+        }))
+      )
+    : [];
+
+  return { personal, global, agentCashes };
 }

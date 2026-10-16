@@ -33,6 +33,38 @@ function AccountBalances({ title, balances }: { title: string; balances: Array<{
   );
 }
 
+type CaisseSnapshot = {
+  balance: number;
+  accountBalances: Array<{ id: string; name: string; kind: "CASH" | "MOBILE_MONEY" | "BANK" | "OTHER"; balance: number }>;
+  fxCashBalances: Array<{ currencyCode: string; balance: number }>;
+};
+
+function AgentCaisse({ agent, snapshot }: { agent: { id: string; name: string | null; email: string | null }; snapshot: CaisseSnapshot }) {
+  return (
+    <section className="space-y-3 border-t border-white/10 pt-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h4 className="font-semibold text-white">{agent.name || agent.email || "Agent sans nom"}</h4>
+          {agent.email && <p className="text-sm text-forex-muted">{agent.email}</p>}
+        </div>
+        <Badge className={snapshot.balance >= 0 ? "border-forex-mint/20 bg-forex-mint/10 text-forex-mint" : "border-forex-danger/20 bg-forex-danger/10 text-forex-danger"}>
+          {formatMoney(snapshot.balance)}
+        </Badge>
+      </div>
+      <AccountBalances title="Comptes XAF" balances={snapshot.accountBalances} />
+      <div className="flex flex-wrap gap-2">
+        {snapshot.fxCashBalances.length === 0 ? (
+          <p className="text-sm text-forex-muted">Aucune devise cash enregistrÃ©e.</p>
+        ) : snapshot.fxCashBalances.map((item) => (
+          <Badge key={item.currencyCode} className="border-white/10 bg-white/[0.05] px-3 py-2 text-white">
+            {item.currencyCode}: {item.balance.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}
+          </Badge>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function CaissePage() {
@@ -41,7 +73,7 @@ export default async function CaissePage() {
 
   const isAdmin = hasPermission(user.role, "cash:manage") && user.role === "ADMIN";
   const data = await getCaisseData({ userId: user.id, includeGlobal: isAdmin });
-  const { personal, global } = data;
+  const { personal, global, agentCashes } = data;
 
   return (
     <PageTransition className="space-y-4 md:space-y-6">
@@ -72,6 +104,25 @@ export default async function CaissePage() {
             <CardHeader><CardTitle>Devises cash globales</CardTitle></CardHeader>
             <CardContent className="flex flex-wrap gap-3">{global.fxCashBalances.length === 0 ? <p className="text-sm text-forex-muted">Aucune devise cash enregistrée.</p> : global.fxCashBalances.map((item) => <Badge key={item.currencyCode} className="border-white/10 bg-white/[0.05] px-3 py-2 text-white">{item.currencyCode}: {item.balance.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}</Badge>)}</CardContent>
           </Card>
+        </section>
+      )}
+
+      {isAdmin && (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm uppercase tracking-premium text-forex-muted">Supervision</p>
+              <h3 className="mt-1 text-xl font-semibold text-white">Caisses des agents</h3>
+            </div>
+            <Badge className="border-white/10 bg-white/[0.05] text-white">{agentCashes.length} agent{agentCashes.length > 1 ? "s" : ""}</Badge>
+          </div>
+          {agentCashes.length === 0 ? (
+            <Card><CardContent className="py-8 text-center text-sm text-forex-muted">Aucun agent enregistrÃ©.</CardContent></Card>
+          ) : (
+            <div className="space-y-5">
+              {agentCashes.map(({ agent, snapshot }) => <AgentCaisse key={agent.id} agent={agent} snapshot={snapshot} />)}
+            </div>
+          )}
         </section>
       )}
 
