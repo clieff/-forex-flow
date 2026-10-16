@@ -57,6 +57,7 @@ export default async function NewTransactionPage() {
         clients={data.clients} 
         suppliers={data.suppliers}
         stockBalances={data.stockBalances}
+        paymentAccounts={data.paymentAccounts}
       />
     </PageTransition>
   );

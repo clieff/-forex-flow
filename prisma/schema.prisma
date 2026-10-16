@@ -123,6 +123,8 @@ model Transaction {
   amountReceived    Decimal         @db.Decimal(18, 2)
   rateUsed          Decimal         @db.Decimal(18, 4)
   paymentMethod     PaymentMethod   @default(CASH)
+  paymentAccountId  String?
+  paymentAccount    PaymentAccount? @relation(fields: [paymentAccountId], references: [id])
   commissionXaf     Decimal         @default(0) @db.Decimal(18, 2)
   realizedMarginXaf Decimal         @default(0) @db.Decimal(18, 2)
   clientName        String?
@@ -136,6 +138,7 @@ model Transaction {
 
   @@index([clientId, createdAt])
   @@index([currencyCode, createdAt])
+  @@index([paymentAccountId, createdAt])
 }
 
 enum Type {
@@ -148,6 +151,26 @@ enum PaymentMethod {
   MOBILE_MONEY
   BANK_TRANSFER
   BANK_DEPOSIT
+}
+
+enum PaymentAccountKind {
+  CASH
+  MOBILE_MONEY
+  BANK
+  OTHER
+}
+
+model PaymentAccount {
+  id           String             @id @default(cuid())
+  name         String
+  kind         PaymentAccountKind
+  isActive     Boolean            @default(true)
+  transactions Transaction[]
+  cashMoves    CashMovement[]
+  createdAt    DateTime           @default(now())
+
+  @@unique([name])
+  @@index([isActive, kind])
 }
 
 // ─── Idempotence des créations de transaction ─────────────────────────────────
@@ -244,11 +267,15 @@ model CashMovement {
   direction   CashDirection
   amount      Decimal       @db.Decimal(18, 2)
   method      PaymentMethod @default(CASH)
+  paymentAccountId String?
+  paymentAccount   PaymentAccount? @relation(fields: [paymentAccountId], references: [id])
   reason      CashReason
   note        String?
   createdById String
   createdBy   User          @relation("CashMoves", fields: [createdById], references: [id])
   createdAt   DateTime      @default(now())
+
+  @@index([paymentAccountId, createdAt])
 }
 
 // ─── Numérotation séquentielle des reçus ──────────────────────────────────────

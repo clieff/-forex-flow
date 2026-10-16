@@ -46,6 +46,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "transactions:view",
     "transactions:create",
     "cash:view",
+    "cash:manage",
     "rates:view",
     "clients:view",
     "suppliers:view",

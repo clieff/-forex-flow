@@ -1,123 +1,129 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { toNumber } from "@/lib/decimal";
-import { startOfDay, subDays, format, isSameDay } from "date-fns";
 
-export async function getCaisseData() {
-  const today = new Date();
-  const weekStart = startOfDay(subDays(today, 6));
+type CaisseFilter = { createdById?: string };
 
-  const [txByMethod, cashByMethod, recentTx, movements] = await Promise.all([
-    // Agrégation des transactions par type et méthode
-    prisma.transaction.groupBy({
-      by: ["type", "paymentMethod"],
-      _sum: { amountGiven: true, amountReceived: true }
+function signedAmount(direction: "IN" | "OUT", amount: number) {
+  return direction === "IN" ? amount : -amount;
+}
+
+async function getSnapshot(filter: CaisseFilter) {
+  const where = filter.createdById ? { createdById: filter.createdById } : {};
+  const [accounts, transactions, movements] = await Promise.all([
+    prisma.paymentAccount.findMany({
+      orderBy: [{ kind: "asc" }, { name: "asc" }]
     }),
-    // Agrégation des mouvements manuels par direction et méthode
-    prisma.cashMovement.groupBy({
-      by: ["direction", "method"],
-      _sum: { amount: true }
-    }),
-    // Transactions récentes pour le graphique
     prisma.transaction.findMany({
-      where: { createdAt: { gte: weekStart } },
-      select: { type: true, amountGiven: true, amountReceived: true, createdAt: true, paymentMethod: true }
+      where,
+      select: {
+        type: true,
+        currencyCode: true,
+        amountGiven: true,
+        amountReceived: true,
+        paymentAccountId: true,
+        createdAt: true,
+        paymentAccount: { select: { id: true, name: true, kind: true } }
+      }
     }),
-    // Liste d'affichage
     prisma.cashMovement.findMany({
-      include: { createdBy: { select: { name: true } } },
+      where,
+      include: {
+        paymentAccount: { select: { id: true, name: true, kind: true } },
+        createdBy: { select: { name: true } }
+      },
       orderBy: { createdAt: "desc" },
       take: 50
     })
   ]);
 
-  const calculateBalanceForMethods = (methods: string[]) => {
-    const txIn = txByMethod
-      .filter((row) => row.type === "SELL" && methods.includes(row.paymentMethod))
-      .reduce((sum, row) => sum + toNumber(row._sum.amountGiven ?? 0), 0);
+  const xafByAccount = new Map(accounts.map((account) => [account.id, 0]));
+  const fxCashByCurrency = new Map<string, number>();
 
-    const txOut = txByMethod
-      .filter((row) => row.type === "BUY" && methods.includes(row.paymentMethod))
-      .reduce((sum, row) => sum + toNumber(row._sum.amountReceived ?? 0), 0);
+  for (const transaction of transactions) {
+    if (transaction.paymentAccountId) {
+      const xafImpact =
+        transaction.type === "SELL"
+          ? toNumber(transaction.amountGiven)
+          : -toNumber(transaction.amountReceived);
+      xafByAccount.set(
+        transaction.paymentAccountId,
+        (xafByAccount.get(transaction.paymentAccountId) ?? 0) + xafImpact
+      );
+    }
 
-    const manualIn = cashByMethod
-      .filter((row) => row.direction === "IN" && methods.includes(row.method))
-      .reduce((sum, row) => sum + toNumber(row._sum.amount ?? 0), 0);
+    if (transaction.paymentAccount?.kind === "CASH") {
+      const fxImpact =
+        transaction.type === "BUY"
+          ? toNumber(transaction.amountGiven)
+          : -toNumber(transaction.amountReceived);
+      fxCashByCurrency.set(
+        transaction.currencyCode,
+        (fxCashByCurrency.get(transaction.currencyCode) ?? 0) + fxImpact
+      );
+    }
+  }
 
-    const manualOut = cashByMethod
-      .filter((row) => row.direction === "OUT" && methods.includes(row.method))
-      .reduce((sum, row) => sum + toNumber(row._sum.amount ?? 0), 0);
+  for (const movement of movements) {
+    if (!movement.paymentAccountId) continue;
+    xafByAccount.set(
+      movement.paymentAccountId,
+      (xafByAccount.get(movement.paymentAccountId) ?? 0) + signedAmount(movement.direction, toNumber(movement.amount))
+    );
+  }
 
-    return txIn - txOut + manualIn - manualOut;
-  };
+  const accountBalances = accounts.map((account) => ({
+    id: account.id,
+    name: account.name,
+    kind: account.kind,
+    balance: xafByAccount.get(account.id) ?? 0,
+    isActive: account.isActive
+  }));
 
-  const cashBalance = calculateBalanceForMethods(["CASH"]);
-  const liquidBalance = calculateBalanceForMethods(["MOBILE_MONEY"]);
-  const bankBalance = calculateBalanceForMethods(["BANK_TRANSFER", "BANK_DEPOSIT"]);
-
-  const balance = cashBalance + liquidBalance + bankBalance;
-
-  // Calculer les totaux globaux pour l'UI existante (rétrocompatibilité)
-  const xafIn = txByMethod
-    .filter((row) => row.type === "SELL")
-    .reduce((sum, row) => sum + toNumber(row._sum.amountGiven ?? 0), 0);
-  const xafOut = txByMethod
-    .filter((row) => row.type === "BUY")
-    .reduce((sum, row) => sum + toNumber(row._sum.amountReceived ?? 0), 0);
-  const manualIn = cashByMethod
-    .filter((row) => row.direction === "IN")
-    .reduce((sum, row) => sum + toNumber(row._sum.amount ?? 0), 0);
-  const manualOut = cashByMethod
-    .filter((row) => row.direction === "OUT")
-    .reduce((sum, row) => sum + toNumber(row._sum.amount ?? 0), 0);
-
-  // Flux XAF des 7 derniers jours pour le graphique
-  const weeklyFlow = Array.from({ length: 7 }).map((_, i) => {
-    const date = subDays(today, 6 - i);
-    const dayTx = recentTx.filter((t) => isSameDay(t.createdAt, date));
-    const dayIn = dayTx
-      .filter((t) => t.type === "SELL")
-      .reduce((sum, t) => sum + toNumber(t.amountGiven), 0);
-    const dayOut = dayTx
-      .filter((t) => t.type === "BUY")
-      .reduce((sum, t) => sum + toNumber(t.amountReceived), 0);
-    return {
-      day: format(date, "EEE"),
-      in: dayIn,
-      out: dayOut,
-      net: dayIn - dayOut
-    };
-  });
-
-  // Flux du jour
-  const todayTx = recentTx.filter((t) => isSameDay(t.createdAt, today));
-  const todayIn = todayTx
-    .filter((t) => t.type === "SELL")
-    .reduce((sum, t) => sum + toNumber(t.amountGiven), 0);
-  const todayOut = todayTx
-    .filter((t) => t.type === "BUY")
-    .reduce((sum, t) => sum + toNumber(t.amountReceived), 0);
+  const xafIn = transactions
+    .filter((transaction) => transaction.type === "SELL")
+    .reduce((sum, transaction) => sum + toNumber(transaction.amountGiven), 0);
+  const xafOut = transactions
+    .filter((transaction) => transaction.type === "BUY")
+    .reduce((sum, transaction) => sum + toNumber(transaction.amountReceived), 0);
+  const manualIn = movements
+    .filter((movement) => movement.direction === "IN")
+    .reduce((sum, movement) => sum + toNumber(movement.amount), 0);
+  const manualOut = movements
+    .filter((movement) => movement.direction === "OUT")
+    .reduce((sum, movement) => sum + toNumber(movement.amount), 0);
 
   return {
-    balance,
-    cashBalance,
-    liquidBalance,
-    bankBalance,
+    balance: accountBalances.reduce((sum, account) => sum + account.balance, 0),
+    accountBalances,
+    fxCashBalances: [...fxCashByCurrency.entries()]
+      .map(([currencyCode, balance]) => ({ currencyCode, balance }))
+      .sort((a, b) => a.currencyCode.localeCompare(b.currencyCode)),
     xafIn,
     xafOut,
     manualIn,
     manualOut,
-    todayIn,
-    todayOut,
-    weeklyFlow,
-    movements: movements.map((m) => ({
-      id: m.id,
-      direction: m.direction,
-      amount: toNumber(m.amount),
-      method: m.method,
-      reason: m.reason,
-      note: m.note,
-      createdBy: m.createdBy.name,
-      createdAt: m.createdAt
+    movements: movements.map((movement) => ({
+      id: movement.id,
+      direction: movement.direction,
+      amount: toNumber(movement.amount),
+      accountName: movement.paymentAccount?.name ?? "Non classé",
+      reason: movement.reason,
+      note: movement.note,
+      createdBy: movement.createdBy.name,
+      createdAt: movement.createdAt
     }))
   };
+}
+
+export async function getCaisseData({
+  userId,
+  includeGlobal
+}: {
+  userId: string;
+  includeGlobal: boolean;
+}) {
+  const personal = await getSnapshot({ createdById: userId });
+  const global = includeGlobal ? await getSnapshot({}) : null;
+  return { personal, global };
 }

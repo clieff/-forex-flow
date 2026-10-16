@@ -9,6 +9,7 @@ import { getNextReceiptNumber } from "@/lib/receipt-sequence";
 import { getAvailableStock } from "@/lib/stock-available";
 import { MAX_CUSTOM_RATE_DEVIATION } from "@/lib/constants";
 import { createLog } from "@/lib/logs";
+import { paymentMethodByAccountKind } from "@/lib/payment-accounts";
 
 class InsufficientStockError extends Error {
   constructor(
@@ -136,7 +137,20 @@ export async function POST(request: Request) {
       ? new Prisma.Decimal(parsed.data.commissionXaf).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
       : new Prisma.Decimal(0);
 
-  const paymentMethod = parsed.data.paymentMethod ?? "CASH";
+  const paymentAccount = parsed.data.paymentAccountId
+    ? await prisma.paymentAccount.findFirst({
+        where: { id: parsed.data.paymentAccountId, isActive: true }
+      })
+    : await prisma.paymentAccount.findFirst({
+        where: { isActive: true, kind: "CASH" },
+        orderBy: { createdAt: "asc" }
+      });
+
+  if (!paymentAccount) {
+    return NextResponse.json({ error: "Aucun compte de paiement actif n'est disponible." }, { status: 400 });
+  }
+
+  const paymentMethod = paymentMethodByAccountKind[paymentAccount.kind];
   const supplierId = parsed.data.supplierId || null;
   const stockAmount = parsed.data.type === "BUY" ? amountGiven : amountReceived;
 
@@ -168,6 +182,7 @@ export async function POST(request: Request) {
             amountReceived,
             rateUsed,
             paymentMethod,
+            paymentAccountId: paymentAccount.id,
             commissionXaf,
             realizedMarginXaf,
             clientName: parsed.data.clientName || null,

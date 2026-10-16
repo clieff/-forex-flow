@@ -13,7 +13,7 @@ export const transactionSchema = z.object({
   supplierId: z.string().optional(),
   isDebt: z.boolean().optional(),
   customRate: z.number().positive().optional().nullable(),
-  paymentMethod: z.enum(["CASH", "MOBILE_MONEY", "BANK_TRANSFER", "BANK_DEPOSIT"]).optional(),
+  paymentAccountId: z.string().min(1).optional(),
   commissionXaf: z
     .number()
     .min(0, "La commission ne peut pas être négative")

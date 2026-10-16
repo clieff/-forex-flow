@@ -192,7 +192,7 @@ export async function getRateManagementData() {
 }
 
 export async function getTransactionFormData(role: Role) {
-  const [currencies, recentTransactions, clients, suppliers, stockBalances] = await Promise.all([
+  const [currencies, recentTransactions, clients, suppliers, stockBalances, paymentAccounts] = await Promise.all([
     prisma.currency.findMany({
       orderBy: { code: "asc" }
     }),
@@ -213,7 +213,11 @@ export async function getTransactionFormData(role: Role) {
     prisma.supplier.findMany({
       orderBy: { name: "asc" }
     }),
-    getStockBalances()
+    getStockBalances(),
+    prisma.paymentAccount.findMany({
+      where: { isActive: true },
+      orderBy: [{ kind: "asc" }, { name: "asc" }]
+    })
   ]);
 
   const currenciesDto = currencies.map((currency) => ({
@@ -237,7 +241,8 @@ export async function getTransactionFormData(role: Role) {
     role, 
     clients: clientsDto,
     suppliers,
-    stockBalances
+    stockBalances,
+    paymentAccounts
   };
 }
 

@@ -14,14 +14,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { transactionSchema } from "@/lib/validation";
-import { PAYMENT_METHODS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ReceiptPreview } from "@/components/transactions/receipt-preview";
 import type { CurrencyDto } from "@/types/dto";
-import type { PaymentMethod } from "@prisma/client";
 
 type RegularClient = {
   id: string;
@@ -42,7 +40,7 @@ type TransactionFormValues = {
   supplierId?: string;
   isDebt?: boolean;
   customRate?: number | null;
-  paymentMethod?: PaymentMethod;
+  paymentAccountId?: string;
   commissionXaf?: number | null;
 };
 
@@ -51,11 +49,13 @@ export function NewTransactionForm({
   clients = [],
   suppliers = [],
   stockBalances = [],
+  paymentAccounts = [],
 }: {
   currencies: CurrencyDto[];
   clients?: RegularClient[];
   suppliers?: { id: string; name: string }[];
   stockBalances?: any[];
+  paymentAccounts?: { id: string; name: string; kind: "CASH" | "MOBILE_MONEY" | "BANK" | "OTHER" }[];
 }) {
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const [isRegular, setIsRegular] = useState(false);
@@ -71,7 +71,7 @@ export function NewTransactionForm({
       supplierId: "",
       isDebt: false,
       customRate: null,
-      paymentMethod: "CASH",
+      paymentAccountId: paymentAccounts.find((account) => account.kind === "CASH")?.id ?? paymentAccounts[0]?.id ?? "",
       commissionXaf: null,
     },
   });
@@ -391,15 +391,15 @@ export function NewTransactionForm({
               <Label>Méthode de paiement</Label>
               <Controller
                 control={form.control}
-                name="paymentMethod"
+                name="paymentAccountId"
                 render={({ field }) => (
                   <select
                     {...field}
                     className="flex h-12 w-full rounded-2xl border border-forex-border bg-white/5 px-4 text-sm text-forex-text outline-none"
                   >
-                    {PAYMENT_METHODS.map((method) => (
-                      <option key={method.value} value={method.value}>
-                        {method.label}
+                    {paymentAccounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name}
                       </option>
                     ))}
                   </select>
