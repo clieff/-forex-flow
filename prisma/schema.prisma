@@ -126,6 +126,9 @@ model Transaction {
   paymentAccountId  String?
   paymentAccount    PaymentAccount? @relation(fields: [paymentAccountId], references: [id])
   commissionXaf     Decimal         @default(0) @db.Decimal(18, 2)
+  grossXaf          Decimal         @default(0) @db.Decimal(18, 2)
+  cashAmountXaf     Decimal         @default(0) @db.Decimal(18, 2)
+  stockCostXaf      Decimal         @default(0) @db.Decimal(18, 2)
   realizedMarginXaf Decimal         @default(0) @db.Decimal(18, 2)
   clientName        String?
   clientId          String?
@@ -239,6 +242,7 @@ model SupplierDebt {
   currencyCode String
   currency     Currency @relation(fields: [currencyCode], references: [code])
   amount       Decimal  @db.Decimal(18, 2)
+  amountXaf    Decimal  @default(0) @db.Decimal(18, 2)
   note         String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

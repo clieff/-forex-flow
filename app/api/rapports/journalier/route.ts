@@ -58,32 +58,24 @@ export async function GET(request: Request) {
       margin: 0
     };
 
-    const midRate = (toNumber(tx.currency.buyRate) + toNumber(tx.currency.sellRate)) / 2;
-
     if (tx.type === "BUY") {
       curr.buyCount++;
       curr.buyVolumeFx += toNumber(tx.amountGiven);
-      curr.xafOut += toNumber(tx.amountReceived);
-      curr.margin += (midRate - toNumber(tx.rateUsed)) * toNumber(tx.amountGiven);
+      curr.xafOut += toNumber(tx.cashAmountXaf);
     } else {
       curr.sellCount++;
       curr.sellVolumeFx += toNumber(tx.amountReceived);
-      curr.xafIn += toNumber(tx.amountGiven);
-      curr.margin += (toNumber(tx.rateUsed) - midRate) * toNumber(tx.amountReceived);
+      curr.xafIn += toNumber(tx.cashAmountXaf);
     }
+    curr.margin += toNumber(tx.realizedMarginXaf);
 
     byCurrency.set(tx.currencyCode, curr);
   }
 
   // Totaux XAF
-  const totalXafIn = transactions.filter(t => t.type === "SELL").reduce((s, t) => s + toNumber(t.amountGiven), 0);
-  const totalXafOut = transactions.filter(t => t.type === "BUY").reduce((s, t) => s + toNumber(t.amountReceived), 0);
-  const totalMargin = transactions.reduce((s, t) => {
-    const midRate = (toNumber(t.currency.buyRate) + toNumber(t.currency.sellRate)) / 2;
-    return s + (t.type === "BUY"
-      ? (midRate - toNumber(t.rateUsed)) * toNumber(t.amountGiven)
-      : (toNumber(t.rateUsed) - midRate) * toNumber(t.amountReceived));
-  }, 0);
+  const totalXafIn = transactions.filter(t => t.type === "SELL").reduce((s, t) => s + toNumber(t.cashAmountXaf), 0);
+  const totalXafOut = transactions.filter(t => t.type === "BUY").reduce((s, t) => s + toNumber(t.cashAmountXaf), 0);
+  const totalMargin = transactions.reduce((s, t) => s + toNumber(t.realizedMarginXaf), 0);
 
   // Mouvements manuels de caisse du jour
   const manualIn = cashMovements.filter(m => m.direction === "IN").reduce((s, m) => s + toNumber(m.amount), 0);
@@ -111,6 +103,10 @@ export async function GET(request: Request) {
       currencyCode: tx.currencyCode,
       amountGiven: toNumber(tx.amountGiven),
       amountReceived: toNumber(tx.amountReceived),
+      grossXaf: toNumber(tx.grossXaf),
+      commissionXaf: toNumber(tx.commissionXaf),
+      cashAmountXaf: toNumber(tx.cashAmountXaf),
+      realizedMarginXaf: toNumber(tx.realizedMarginXaf),
       rateUsed: toNumber(tx.rateUsed),
       clientName: tx.client?.name ?? tx.clientName ?? "Walk-in",
       agentName: tx.createdBy.name,

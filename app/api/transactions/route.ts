@@ -10,6 +10,7 @@ import { getAvailableStock } from "@/lib/stock-available";
 import { MAX_CUSTOM_RATE_DEVIATION } from "@/lib/constants";
 import { createLog } from "@/lib/logs";
 import { paymentMethodByAccountKind } from "@/lib/payment-accounts";
+import { getInventoryUnitCost } from "@/lib/inventory-cost";
 
 class InsufficientStockError extends Error {
   constructor(
@@ -121,21 +122,26 @@ export async function POST(request: Request) {
       ? amountGiven.mul(rateUsed).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
       : amountGiven.div(rateUsed).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
 
-  // Marge réalisée stockée par transaction :
-  //   SELL : (taux de vente − coût moyen pondéré) × montant FX vendu
-  //   BUY  : 0 (modèle cost-plus assumé : buyRate = PMA, on achète au coût)
-  const realizedMarginXaf =
-    parsed.data.type === "SELL"
-      ? rateUsed
-          .minus(currency.buyRate)
-          .mul(amountReceived)
-          .toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
-      : new Prisma.Decimal(0);
-
+  // La marge est figée dans la transaction à partir du coût moyen du stock au moment de la vente.
   const commissionXaf =
     parsed.data.commissionXaf != null
       ? new Prisma.Decimal(parsed.data.commissionXaf).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
       : new Prisma.Decimal(0);
+
+  if (parsed.data.isDebt && parsed.data.type === "SELL") {
+    return NextResponse.json({ error: "Le règlement à crédit est disponible uniquement pour un achat fournisseur." }, { status: 400 });
+  }
+
+  const grossXaf = parsed.data.type === "BUY" ? amountReceived : amountGiven;
+  const cashAmountXaf = parsed.data.isDebt && parsed.data.type === "BUY"
+    ? new Prisma.Decimal(0)
+    : parsed.data.type === "BUY"
+      ? grossXaf.minus(commissionXaf)
+      : grossXaf.plus(commissionXaf);
+
+  if (cashAmountXaf.lt(0)) {
+    return NextResponse.json({ error: "La commission ne peut pas dépasser le montant à payer." }, { status: 400 });
+  }
 
   const paymentAccount = parsed.data.paymentAccountId
     ? await prisma.paymentAccount.findFirst({
@@ -170,6 +176,20 @@ export async function POST(request: Request) {
           }
         }
 
+        const stockCostXaf = parsed.data.type === "SELL"
+          ? (await getInventoryUnitCost({
+              currencyCode: parsed.data.currencyCode,
+              supplierId,
+              fallbackUnitCost: currency.buyRate,
+              client: tx
+            }))
+              .mul(stockAmount)
+              .toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
+          : new Prisma.Decimal(0);
+        const realizedMarginXaf = parsed.data.type === "SELL"
+          ? cashAmountXaf.minus(stockCostXaf).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
+          : new Prisma.Decimal(0);
+
         // Numéro de reçu généré dans la même transaction : pas de trou si rollback.
         const receiptNumber = await getNextReceiptNumber(tx);
 
@@ -184,6 +204,9 @@ export async function POST(request: Request) {
             paymentMethod,
             paymentAccountId: paymentAccount.id,
             commissionXaf,
+            grossXaf,
+            cashAmountXaf,
+            stockCostXaf,
             realizedMarginXaf,
             clientName: parsed.data.clientName || null,
             clientId: parsed.data.clientId || null,
@@ -199,7 +222,9 @@ export async function POST(request: Request) {
             currencyCode: parsed.data.currencyCode,
             direction: parsed.data.type === "BUY" ? "IN" : "OUT",
             amount: stockAmount,
-            reason: parsed.data.isDebt ? "DEBT_SETTLEMENT" : "TRANSACTION",
+            unitPrice: parsed.data.type === "BUY" ? rateUsed : null,
+            totalCostXaf: parsed.data.type === "BUY" ? grossXaf : stockCostXaf,
+            reason: "TRANSACTION",
             transactionId: createdTx.id,
             supplierId,
             createdById: user.id
@@ -207,8 +232,6 @@ export async function POST(request: Request) {
         });
 
         if (supplierId && parsed.data.isDebt) {
-          const amountFx = parsed.data.type === "BUY" ? amountGiven : amountReceived;
-          const debtImpact = parsed.data.type === "BUY" ? amountFx : amountFx.neg();
           await tx.supplierDebt.upsert({
             where: {
               supplierId_currencyCode: {
@@ -216,11 +239,12 @@ export async function POST(request: Request) {
                 currencyCode: parsed.data.currencyCode
               }
             },
-            update: { amount: { increment: debtImpact } },
+            update: { amountXaf: { increment: grossXaf } },
             create: {
               supplierId,
               currencyCode: parsed.data.currencyCode,
-              amount: debtImpact
+              amount: new Prisma.Decimal(0),
+              amountXaf: grossXaf
             }
           });
         }

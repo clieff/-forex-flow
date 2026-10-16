@@ -121,14 +121,14 @@ export function NewTransactionForm({
 
   const currentDebtLabel =
     currentDebt < 0
-      ? `Le fournisseur vous doit ${Math.abs(currentDebt).toLocaleString()} ${values.currencyCode}`
+      ? `Le fournisseur vous doit ${Math.abs(currentDebt).toLocaleString()} XAF`
       : currentDebt > 0
-        ? `Vous devez ${currentDebt.toLocaleString()} ${values.currencyCode} au fournisseur`
+        ? `Vous devez ${currentDebt.toLocaleString()} XAF au fournisseur`
         : "Aucune dette en cours";
 
   const computed = useMemo(() => {
     if (!selectedCurrency || !values.amountGiven) {
-      return { amountReceived: 0, rate: 0 };
+      return { amountReceived: 0, grossXaf: 0, cashAmountXaf: 0, commissionXaf: 0, rate: 0 };
     }
 
     // Use custom rate if provided, otherwise use default rate logic
@@ -152,17 +152,18 @@ export function NewTransactionForm({
       }
     }
 
-    if (values.type === "BUY") {
-      return {
-        amountReceived: Number((values.amountGiven * rate).toFixed(2)),
-        rate,
-      };
-    }
+    const amountReceived = values.type === "BUY"
+      ? Number((values.amountGiven * rate).toFixed(2))
+      : Number((values.amountGiven / rate).toFixed(2));
+    const grossXaf = values.type === "BUY" ? amountReceived : values.amountGiven;
+    const commissionXaf = Number.isFinite(values.commissionXaf) ? Math.max(values.commissionXaf ?? 0, 0) : 0;
+    const cashAmountXaf = values.isDebt && values.type === "BUY"
+      ? 0
+      : values.type === "BUY"
+        ? grossXaf - commissionXaf
+        : grossXaf + commissionXaf;
 
-    return {
-      amountReceived: Number((values.amountGiven / rate).toFixed(2)),
-      rate,
-    };
+    return { amountReceived, grossXaf, cashAmountXaf, commissionXaf, rate };
   }, [
     selectedCurrency,
     values.amountGiven,
@@ -171,6 +172,8 @@ export function NewTransactionForm({
     selectedClient,
     values.currencyCode,
     values.customRate,
+    values.commissionXaf,
+    values.isDebt,
   ]);
 
   async function onSubmit(payload: TransactionFormValues) {
@@ -417,7 +420,9 @@ export function NewTransactionForm({
                 step="0.01"
                 min="0"
                 placeholder="0"
-                {...form.register("commissionXaf", { valueAsNumber: true })}
+                {...form.register("commissionXaf", {
+                  setValueAs: (value) => value === "" ? null : Number(value),
+                })}
                 className="h-12 rounded-2xl border-forex-border bg-white/5"
               />
             </div>
@@ -516,7 +521,11 @@ export function NewTransactionForm({
                   Calcul instantane
                 </p>
                 <p className="mt-1 text-2xl lg:text-3xl font-semibold text-white">
-                  {computed.amountReceived.toFixed(2)}
+                  {computed.cashAmountXaf.toFixed(2)} XAF
+                </p>
+                <p className="mt-1 text-xs text-forex-muted">
+                  Brut {computed.grossXaf.toFixed(2)} XAF · Commission {computed.commissionXaf.toFixed(2)} XAF
+                  {values.isDebt && values.type === "BUY" ? " · Achat a credit" : ""}
                 </p>
               </div>
               <div className="text-right">
@@ -570,6 +579,9 @@ export function NewTransactionForm({
             currency={selectedCurrency}
             amountGiven={values.amountGiven ?? 0}
             amountReceived={computed.amountReceived}
+            grossXaf={computed.grossXaf}
+            commissionXaf={computed.commissionXaf}
+            cashAmountXaf={computed.cashAmountXaf}
             type={values.type}
             clientName={counterpartyName}
             counterpartyLabel={values.type === "BUY" ? "Fournisseur" : "Client"}
@@ -583,6 +595,9 @@ export function NewTransactionForm({
           currency={selectedCurrency}
           amountGiven={values.amountGiven ?? 0}
           amountReceived={computed.amountReceived}
+          grossXaf={computed.grossXaf}
+          commissionXaf={computed.commissionXaf}
+          cashAmountXaf={computed.cashAmountXaf}
           type={values.type}
           clientName={counterpartyName}
           counterpartyLabel={values.type === "BUY" ? "Fournisseur" : "Client"}

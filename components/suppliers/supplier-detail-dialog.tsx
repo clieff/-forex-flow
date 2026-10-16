@@ -131,7 +131,7 @@ export function SupplierDetailDialog({
                        "text-2xl font-bold tabular-nums mt-1",
                        supplier.summary.outstandingDebt > 0 ? "text-red-400" : supplier.summary.outstandingDebt < 0 ? "text-emerald-400" : "text-white"
                      )}>
-                       {supplier.summary.outstandingDebt.toLocaleString()} <span className="text-xs font-normal text-forex-muted">Devises</span>
+                       {supplier.summary.outstandingDebt.toLocaleString()} <span className="text-xs font-normal text-forex-muted">XAF</span>
                      </p>
                   </div>
                </div>
@@ -180,7 +180,7 @@ export function SupplierDetailDialog({
                         <div className="space-y-2">
                            <PositionLine label="Solde Stock" value={pos.stockBalance} />
                            <PositionLine
-                            label="Dette / Creance"
+                            label="Dette / Creance XAF"
                             value={pos.debtBalance}
                             color={pos.debtBalance > 0 ? "text-red-400" : pos.debtBalance < 0 ? "text-emerald-400" : undefined}
                            />

@@ -9,12 +9,11 @@ type TransactionWithCurrency = Transaction & {
 };
 
 function getMarginEstimate(transaction: TransactionWithCurrency) {
-  const midRate = (toNumber(transaction.currency.buyRate) + toNumber(transaction.currency.sellRate)) / 2;
-  const effectiveRate = toNumber(transaction.rateUsed);
-  const amountGiven = toNumber(transaction.amountGiven);
-  const amountReceived = toNumber(transaction.amountReceived);
+  return toNumber(transaction.realizedMarginXaf);
+}
 
-  return transaction.type === "BUY" ? (midRate - effectiveRate) * amountGiven : (effectiveRate - midRate) * amountReceived;
+function getXafVolume(transaction: TransactionWithCurrency) {
+  return toNumber(transaction.cashAmountXaf);
 }
 
 export async function getDashboardData() {
@@ -62,14 +61,14 @@ export async function getDashboardData() {
       day: format(date, "EEE"),
       buyVolume: sameDay
         .filter((transaction) => transaction.type === "BUY")
-        .reduce((sum, transaction) => sum + toNumber(transaction.amountReceived), 0),
+        .reduce((sum, transaction) => sum + getXafVolume(transaction), 0),
       sellVolume: sameDay
         .filter((transaction) => transaction.type === "SELL")
-        .reduce((sum, transaction) => sum + toNumber(transaction.amountGiven), 0)
+        .reduce((sum, transaction) => sum + getXafVolume(transaction), 0)
     };
   });
 
-  const totalVolume = transactions.reduce((sum, transaction) => sum + toNumber(transaction.amountReceived), 0);
+  const totalVolume = transactions.reduce((sum, transaction) => sum + getXafVolume(transaction), 0);
   const estimatedMargin = transactions.reduce((sum, transaction) => sum + getMarginEstimate(transaction), 0);
   const todayTransactions = transactions.filter((transaction) => isSameDay(transaction.createdAt, today));
 
@@ -77,10 +76,10 @@ export async function getDashboardData() {
     const related = transactions.filter((transaction) => transaction.currencyCode === currency.code);
     const buyVolume = related
       .filter((transaction) => transaction.type === "BUY")
-      .reduce((sum, transaction) => sum + toNumber(transaction.amountReceived), 0);
+      .reduce((sum, transaction) => sum + getXafVolume(transaction), 0);
     const sellVolume = related
       .filter((transaction) => transaction.type === "SELL")
-      .reduce((sum, transaction) => sum + toNumber(transaction.amountGiven), 0);
+      .reduce((sum, transaction) => sum + getXafVolume(transaction), 0);
 
     return {
       code: currency.code,
@@ -100,7 +99,7 @@ export async function getDashboardData() {
     const sameDay = transactions.filter((transaction) => isSameDay(transaction.createdAt, date));
     return {
       label: format(date, "dd/MM"),
-      volume: sameDay.reduce((sum, transaction) => sum + toNumber(transaction.amountReceived), 0),
+      volume: sameDay.reduce((sum, transaction) => sum + getXafVolume(transaction), 0),
       count: sameDay.length,
       margin: sameDay.reduce((sum, transaction) => sum + getMarginEstimate(transaction), 0)
     };
@@ -140,7 +139,7 @@ export async function getDashboardData() {
       if (!acc[agentId]) {
         acc[agentId] = { id: agentId, name: tx.createdBy.name, volume: 0, count: 0 };
       }
-      acc[agentId].volume += toNumber(tx.amountReceived);
+      acc[agentId].volume += getXafVolume(tx);
       acc[agentId].count += 1;
       return acc;
     }, {} as Record<string, { id: string; name: string; volume: number; count: number }>)

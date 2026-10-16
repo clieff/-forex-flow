@@ -187,7 +187,7 @@ function SupplierCard({
           <SupplierStat
             icon={BadgeDollarSign}
             label="Dette nette"
-            value={supplier.summary.outstandingDebt.toFixed(2)}
+            value={`${supplier.summary.outstandingDebt.toFixed(2)} XAF`}
           />
           <SupplierStat
             icon={Clock3}
@@ -218,8 +218,8 @@ function SupplierCard({
                   <div className="mt-4 space-y-2.5">
                     <MetricLine label="Stock" value={position.stockBalance.toFixed(2)} />
                     <MetricLine
-                      label="Dette"
-                      value={position.debtBalance.toFixed(2)}
+                      label="Dette XAF"
+                      value={`${position.debtBalance.toFixed(2)} XAF`}
                       valueClassName={
                         position.debtBalance < 0
                           ? "text-emerald-300"
@@ -267,7 +267,7 @@ function SupplierCard({
                           : "text-white",
                     )}
                   >
-                    {debt.amount.toFixed(2)}
+                    {debt.amount.toFixed(2)} XAF
                   </span>
                 </div>
               ))}

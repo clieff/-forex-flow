@@ -9,6 +9,9 @@ export function ReceiptPreview({
   currency,
   amountGiven,
   amountReceived,
+  grossXaf,
+  commissionXaf,
+  cashAmountXaf,
   type,
   clientName,
   counterpartyLabel = "Client",
@@ -17,6 +20,9 @@ export function ReceiptPreview({
   currency?: CurrencyDto;
   amountGiven: number;
   amountReceived: number;
+  grossXaf: number;
+  commissionXaf: number;
+  cashAmountXaf: number;
   type: Type;
   clientName?: string;
   counterpartyLabel?: string;
@@ -63,6 +69,12 @@ export function ReceiptPreview({
         <ReceiptRow
           label="Taux"
           value={rate ? `${rate.toFixed(2)} XAF` : "--"}
+        />
+        <ReceiptRow label="Brut XAF" value={formatMoney(grossXaf)} />
+        {commissionXaf > 0 && <ReceiptRow label="Commission" value={formatMoney(commissionXaf)} />}
+        <ReceiptRow
+          label={type === "BUY" ? "Net a payer" : "Net a encaisser"}
+          value={formatMoney(cashAmountXaf)}
         />
       </div>
 

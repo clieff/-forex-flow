@@ -274,7 +274,7 @@ export function StockMovementForm({
             <div className="flex items-center gap-2 rounded-2xl bg-amber-400/10 p-3 text-sm text-amber-300 xl:col-span-3">
               <AlertCircle className="h-4 w-4" />
               <span>
-                Ecart detecte: le fournisseur vous doit encore <strong>{remaining.toFixed(2)} {formData.currencyCode}</strong>. La dette sera mise a jour automatiquement.
+                Ecart detecte: <strong>{remaining.toFixed(2)} {formData.currencyCode}</strong> ne sont pas encore entres en stock.
               </span>
             </div>
           ) : null}
@@ -287,7 +287,7 @@ export function StockMovementForm({
                 checked={formData.isDebt}
                 onChange={(e) => setFormData({ ...formData, isDebt: e.target.checked })}
               />
-              Reglement de dette fournisseur
+              Achat fournisseur a credit (dette en XAF)
             </label>
           </div>
 

@@ -21,6 +21,7 @@ async function getSnapshot(filter: CaisseFilter) {
         currencyCode: true,
         amountGiven: true,
         amountReceived: true,
+        cashAmountXaf: true,
         paymentAccountId: true,
         createdAt: true,
         paymentAccount: { select: { id: true, name: true, kind: true } }
@@ -44,24 +45,23 @@ async function getSnapshot(filter: CaisseFilter) {
     if (transaction.paymentAccountId) {
       const xafImpact =
         transaction.type === "SELL"
-          ? toNumber(transaction.amountGiven)
-          : -toNumber(transaction.amountReceived);
+          ? toNumber(transaction.cashAmountXaf)
+          : -toNumber(transaction.cashAmountXaf);
       xafByAccount.set(
         transaction.paymentAccountId,
         (xafByAccount.get(transaction.paymentAccountId) ?? 0) + xafImpact
       );
     }
 
-    if (transaction.paymentAccount?.kind === "CASH") {
-      const fxImpact =
-        transaction.type === "BUY"
-          ? toNumber(transaction.amountGiven)
-          : -toNumber(transaction.amountReceived);
-      fxCashByCurrency.set(
-        transaction.currencyCode,
-        (fxCashByCurrency.get(transaction.currencyCode) ?? 0) + fxImpact
-      );
-    }
+    // La devise est physiquement remise ou recue, quel que soit le canal XAF.
+    const fxImpact =
+      transaction.type === "BUY"
+        ? toNumber(transaction.amountGiven)
+        : -toNumber(transaction.amountReceived);
+    fxCashByCurrency.set(
+      transaction.currencyCode,
+      (fxCashByCurrency.get(transaction.currencyCode) ?? 0) + fxImpact
+    );
   }
 
   for (const movement of movements) {
@@ -82,10 +82,10 @@ async function getSnapshot(filter: CaisseFilter) {
 
   const xafIn = transactions
     .filter((transaction) => transaction.type === "SELL")
-    .reduce((sum, transaction) => sum + toNumber(transaction.amountGiven), 0);
+    .reduce((sum, transaction) => sum + toNumber(transaction.cashAmountXaf), 0);
   const xafOut = transactions
     .filter((transaction) => transaction.type === "BUY")
-    .reduce((sum, transaction) => sum + toNumber(transaction.amountReceived), 0);
+    .reduce((sum, transaction) => sum + toNumber(transaction.cashAmountXaf), 0);
   const manualIn = movements
     .filter((movement) => movement.direction === "IN")
     .reduce((sum, movement) => sum + toNumber(movement.amount), 0);

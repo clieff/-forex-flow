@@ -131,6 +131,10 @@ export function ReceiptDocument({
             <Text style={styles.value}>{Number(transaction.rateUsed).toFixed(2)} XAF</Text>
           </View>
           <View style={styles.row}>
+            <Text style={styles.label}>Montant brut XAF</Text>
+            <Text style={styles.value}>{Number(transaction.grossXaf).toFixed(2)} XAF</Text>
+          </View>
+          <View style={styles.row}>
             <Text style={styles.label}>Mode de paiement</Text>
             <Text style={styles.value}>{PAYMENT_METHOD_LABEL[transaction.paymentMethod]}</Text>
           </View>
@@ -140,6 +144,10 @@ export function ReceiptDocument({
               <Text style={styles.value}>{Number(transaction.commissionXaf).toFixed(2)} XAF</Text>
             </View>
           )}
+          <View style={styles.row}>
+            <Text style={styles.label}>{transaction.type === "BUY" ? "Net paye" : "Net encaisse"}</Text>
+            <Text style={styles.value}>{Number(transaction.cashAmountXaf).toFixed(2)} XAF</Text>
+          </View>
           <View style={styles.row}>
             <Text style={styles.label}>Processed By</Text>
             <Text style={styles.value}>{transaction.createdBy.name}</Text>

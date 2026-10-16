@@ -4,7 +4,6 @@ import { getServerSession } from "@/lib/auth-session";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getRequestIp } from "@/lib/rate-limit";
 import { createLog } from "@/lib/logs";
-import { updateCurrencyBuyRate } from "@/lib/pricing";
 import { isAdminRole } from "@/lib/roles";
 
 export async function POST(request: Request) {
@@ -73,9 +72,6 @@ export async function POST(request: Request) {
   }
 
   const actualAmount = new Prisma.Decimal(amountNum).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
-  const totalExpected = body.totalAmount ? new Prisma.Decimal(body.totalAmount).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP) : actualAmount;
-  const unreceived = totalExpected.minus(actualAmount);
-
   let unitPrice: Prisma.Decimal | null = null;
   let totalCostXaf: Prisma.Decimal | null = null;
 
@@ -110,7 +106,7 @@ export async function POST(request: Request) {
         amount: actualAmount,
         unitPrice,
         totalCostXaf,
-        reason: body.isDebt ? "DEBT_SETTLEMENT" : reason,
+        reason,
         note: body.note?.trim() || null,
         supplierId,
         createdById: user.id
@@ -118,15 +114,11 @@ export async function POST(request: Request) {
     });
 
     if (supplierId) {
-      let debtChange = new Prisma.Decimal(0);
+      const debtChangeXaf = body.isDebt && totalCostXaf
+        ? totalCostXaf
+        : new Prisma.Decimal(0);
 
-      if (body.isDebt) {
-        debtChange = direction === "IN" ? actualAmount : actualAmount.neg();
-      } else if (unreceived.gt(0)) {
-        debtChange = direction === "IN" ? unreceived.neg() : unreceived;
-      }
-
-      if (!debtChange.isZero()) {
+      if (!debtChangeXaf.isZero()) {
         await tx.supplierDebt.upsert({
           where: {
             supplierId_currencyCode: {
@@ -135,12 +127,13 @@ export async function POST(request: Request) {
             }
           },
           update: {
-            amount: { increment: debtChange }
+            amountXaf: { increment: debtChangeXaf }
           },
           create: {
             supplierId,
             currencyCode,
-            amount: debtChange
+            amount: new Prisma.Decimal(0),
+            amountXaf: debtChangeXaf
           }
         });
       }
@@ -148,10 +141,6 @@ export async function POST(request: Request) {
 
     return stockMove;
   });
-
-  if (reason === "SUPPLIER_PURCHASE" && direction === "IN") {
-    await updateCurrencyBuyRate(currencyCode);
-  }
 
   await createLog({
     category: "STOCK",

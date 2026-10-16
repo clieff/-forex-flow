@@ -17,7 +17,7 @@ export async function getSuppliersOverview() {
     orderBy: { createdAt: "desc" },
     include: {
       debts: {
-        orderBy: [{ amount: "desc" }, { currencyCode: "asc" }]
+        orderBy: [{ amountXaf: "desc" }, { currencyCode: "asc" }]
       },
       moves: {
         orderBy: { createdAt: "desc" },
@@ -66,7 +66,7 @@ export async function getSuppliersOverview() {
         current.totalSold += amount;
       }
 
-      if (move.reason === "SUPPLIER_PURCHASE" && move.direction === "IN" && move.unitPrice) {
+      if (move.direction === "IN" && move.unitPrice) {
         const unitPrice = toNumber(move.unitPrice);
         current.totalCostXaf += toNumber(move.totalCostXaf ?? move.amount.mul(move.unitPrice));
         current.pricedAmount += amount;
@@ -92,7 +92,7 @@ export async function getSuppliersOverview() {
           lastBuyRate: null
         };
 
-      current.debtBalance = toNumber(debt.amount);
+      current.debtBalance = toNumber(debt.amountXaf);
       byCurrency.set(debt.currencyCode, current);
     }
 
@@ -116,7 +116,7 @@ export async function getSuppliersOverview() {
       debts: supplier.debts.map((debt) => ({
         id: debt.id,
         currencyCode: debt.currencyCode,
-        amount: toNumber(debt.amount),
+        amount: toNumber(debt.amountXaf),
         note: debt.note,
         updatedAt: debt.updatedAt
       })),
@@ -138,8 +138,8 @@ export async function getSuppliersOverview() {
       })),
       summary: {
         totalMovements: supplier.moves.length,
-        totalDebtCurrencies: supplier.debts.filter((debt) => !debt.amount.isZero()).length,
-        outstandingDebt: supplier.debts.reduce((sum, debt) => sum + toNumber(debt.amount), 0),
+        totalDebtCurrencies: supplier.debts.filter((debt) => !debt.amountXaf.isZero()).length,
+        outstandingDebt: supplier.debts.reduce((sum, debt) => sum + toNumber(debt.amountXaf), 0),
         lastMovementAt: supplier.moves[0]?.createdAt ?? null
       }
     };
@@ -151,7 +151,7 @@ export async function getSupplierDetails(id: string) {
     where: { id },
     include: {
       debts: {
-        orderBy: [{ amount: "desc" }, { currencyCode: "asc" }]
+        orderBy: [{ amountXaf: "desc" }, { currencyCode: "asc" }]
       },
       moves: {
         orderBy: { createdAt: "desc" },
@@ -211,7 +211,7 @@ export async function getSupplierDetails(id: string) {
     } else {
       current.totalSold += amount;
     }
-    if (move.reason === "SUPPLIER_PURCHASE" && move.direction === "IN" && move.unitPrice) {
+    if (move.direction === "IN" && move.unitPrice) {
       const unitPrice = toNumber(move.unitPrice);
       current.totalCostXaf += toNumber(move.totalCostXaf ?? move.amount.mul(move.unitPrice));
       current.pricedAmount += amount;
@@ -222,7 +222,7 @@ export async function getSupplierDetails(id: string) {
 
   for (const debt of supplier.debts) {
     const current = byCurrency.get(debt.currencyCode);
-    if (current) current.debtBalance = toNumber(debt.amount);
+    if (current) current.debtBalance = toNumber(debt.amountXaf);
   }
 
   const positions = [...byCurrency.values()]
@@ -245,7 +245,7 @@ export async function getSupplierDetails(id: string) {
     debts: supplier.debts.map((debt) => ({
       id: debt.id,
       currencyCode: debt.currencyCode,
-      amount: toNumber(debt.amount),
+      amount: toNumber(debt.amountXaf),
       note: debt.note,
       updatedAt: debt.updatedAt
     })),
@@ -265,7 +265,7 @@ export async function getSupplierDetails(id: string) {
     })),
     summary: {
       totalMovements: allMoves.length,
-      outstandingDebt: supplier.debts.reduce((sum, debt) => sum + toNumber(debt.amount), 0),
+      outstandingDebt: supplier.debts.reduce((sum, debt) => sum + toNumber(debt.amountXaf), 0),
       lastMovementAt: allMoves[0]?.createdAt ?? null
     }
   };

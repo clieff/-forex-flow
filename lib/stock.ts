@@ -15,8 +15,8 @@ type SupplierRow = {
 export async function getStockBalances() {
   const [moves, debts] = await Promise.all([
     prisma.stockMovement.findMany({
-      include: { currency: true, supplier: true },
-      orderBy: { createdAt: "desc" }
+      include: { currency: true, supplier: true, transaction: true },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }]
     }),
     prisma.supplierDebt.findMany({
       include: { currency: true, supplier: true }
@@ -57,9 +57,19 @@ export async function getStockBalances() {
       current.outTotal = current.outTotal.add(move.amount);
     }
 
-    if (move.reason === "SUPPLIER_PURCHASE" && move.direction === "IN" && move.unitPrice) {
-      current.pricedAmount = current.pricedAmount.add(move.amount);
-      current.pricedCost = current.pricedCost.add(move.totalCostXaf ?? move.unitPrice.mul(move.amount));
+    if (move.direction === "IN") {
+      const cost = move.totalCostXaf ?? (move.transaction?.type === "BUY"
+        ? move.transaction.amountReceived
+        : move.unitPrice ? move.unitPrice.mul(move.amount) : null);
+      if (cost) {
+        current.pricedAmount = current.pricedAmount.add(move.amount);
+        current.pricedCost = current.pricedCost.add(cost);
+      }
+    } else if (current.pricedAmount.gt(0)) {
+      const unitCost = current.pricedCost.div(current.pricedAmount);
+      const outgoingCost = move.totalCostXaf ?? unitCost.mul(move.amount);
+      current.pricedAmount = current.pricedAmount.sub(move.amount);
+      current.pricedCost = current.pricedCost.sub(outgoingCost);
     }
 
     if (move.supplierId) {
@@ -80,12 +90,22 @@ export async function getStockBalances() {
         supplierData.balance = supplierData.balance.sub(move.amount);
       }
 
-      if (move.reason === "SUPPLIER_PURCHASE" && move.direction === "IN" && move.unitPrice) {
-        supplierData.pricedAmount = supplierData.pricedAmount.add(move.amount);
-        supplierData.pricedCost = supplierData.pricedCost.add(move.totalCostXaf ?? move.unitPrice.mul(move.amount));
-        if (!supplierData.lastBuyRate) {
+      if (move.direction === "IN") {
+        const cost = move.totalCostXaf ?? (move.transaction?.type === "BUY"
+          ? move.transaction.amountReceived
+          : move.unitPrice ? move.unitPrice.mul(move.amount) : null);
+        if (cost) {
+          supplierData.pricedAmount = supplierData.pricedAmount.add(move.amount);
+          supplierData.pricedCost = supplierData.pricedCost.add(cost);
+        }
+        if (move.unitPrice) {
           supplierData.lastBuyRate = move.unitPrice;
         }
+      } else if (supplierData.pricedAmount.gt(0)) {
+        const unitCost = supplierData.pricedCost.div(supplierData.pricedAmount);
+        const outgoingCost = move.totalCostXaf ?? unitCost.mul(move.amount);
+        supplierData.pricedAmount = supplierData.pricedAmount.sub(move.amount);
+        supplierData.pricedCost = supplierData.pricedCost.sub(outgoingCost);
       }
 
       current.bySupplier.set(move.supplierId, supplierData);
@@ -110,7 +130,7 @@ export async function getStockBalances() {
       averageBuyRate: null,
       lastBuyRate: null
     };
-    sData.debt = debt.amount;
+    sData.debt = debt.amountXaf;
     curr.bySupplier.set(debt.supplierId, sData);
   }
 
