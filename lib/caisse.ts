@@ -128,8 +128,8 @@ export async function getCaisseData({
     includeGlobal ? getSnapshot({}) : Promise.resolve(null),
     includeGlobal
       ? prisma.user.findMany({
-          where: { role: "AGENT" },
-          select: { id: true, name: true, email: true },
+          where: { role: { in: ["ADMIN", "AGENT"] } },
+          select: { id: true, name: true, email: true, role: true },
           orderBy: { name: "asc" }
         })
       : Promise.resolve([])

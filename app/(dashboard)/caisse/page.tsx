@@ -39,12 +39,17 @@ type CaisseSnapshot = {
   fxCashBalances: Array<{ currencyCode: string; balance: number }>;
 };
 
-function AgentCaisse({ agent, snapshot }: { agent: { id: string; name: string | null; email: string | null }; snapshot: CaisseSnapshot }) {
+function TeamCaisse({ agent, snapshot }: { agent: { id: string; name: string | null; email: string | null; role: "ADMIN" | "AGENT" }; snapshot: CaisseSnapshot }) {
   return (
     <section className="space-y-3 border-t border-white/10 pt-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h4 className="font-semibold text-white">{agent.name || agent.email || "Agent sans nom"}</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold text-white">{agent.name || agent.email || "Utilisateur sans nom"}</h4>
+            <Badge className={agent.role === "ADMIN" ? "border-forex-mint/20 bg-forex-mint/10 text-forex-mint" : "border-white/10 bg-white/[0.05] text-forex-muted"}>
+              {agent.role === "ADMIN" ? "Administrateur" : "Agent"}
+            </Badge>
+          </div>
           {agent.email && <p className="text-sm text-forex-muted">{agent.email}</p>}
         </div>
         <Badge className={snapshot.balance >= 0 ? "border-forex-mint/20 bg-forex-mint/10 text-forex-mint" : "border-forex-danger/20 bg-forex-danger/10 text-forex-danger"}>
@@ -112,15 +117,15 @@ export default async function CaissePage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm uppercase tracking-premium text-forex-muted">Supervision</p>
-              <h3 className="mt-1 text-xl font-semibold text-white">Caisses des agents</h3>
+              <h3 className="mt-1 text-xl font-semibold text-white">Caisses de l&apos;équipe</h3>
             </div>
-            <Badge className="border-white/10 bg-white/[0.05] text-white">{agentCashes.length} agent{agentCashes.length > 1 ? "s" : ""}</Badge>
+            <Badge className="border-white/10 bg-white/[0.05] text-white">{agentCashes.length} membre{agentCashes.length > 1 ? "s" : ""}</Badge>
           </div>
           {agentCashes.length === 0 ? (
-            <Card><CardContent className="py-8 text-center text-sm text-forex-muted">Aucun agent enregistrÃ©.</CardContent></Card>
+            <Card><CardContent className="py-8 text-center text-sm text-forex-muted">Aucun membre enregistrÃ©.</CardContent></Card>
           ) : (
             <div className="space-y-5">
-              {agentCashes.map(({ agent, snapshot }) => <AgentCaisse key={agent.id} agent={agent} snapshot={snapshot} />)}
+              {agentCashes.map(({ agent, snapshot }) => <TeamCaisse key={agent.id} agent={agent} snapshot={snapshot} />)}
             </div>
           )}
         </section>
